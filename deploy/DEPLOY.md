@@ -76,7 +76,7 @@ DJANGO_ALLOWED_HOSTS=mealplanner.matthewlemon.com
 
 ```bash
 cd /var/www/mealplanner
-sudo -u www-data /home/www-data/.local/bin/uv sync
+sudo -u www-data /var/www/.local/bin/uv sync
 ```
 
 ## Step 7: Prepare Django
@@ -85,13 +85,13 @@ sudo -u www-data /home/www-data/.local/bin/uv sync
 cd /var/www/mealplanner
 
 # Collect static files
-sudo -u www-data /home/www-data/.local/bin/uv run python manage.py collectstatic --noinput
+sudo -u www-data /var/www/.local/bin/uv run python manage.py collectstatic --noinput
 
 # Run database migrations
-sudo -u www-data /home/www-data/.local/bin/uv run python manage.py migrate
+sudo -u www-data /var/www/.local/bin/uv run python manage.py migrate
 
 # Create a superuser (optional, for admin access)
-sudo -u www-data /home/www-data/.local/bin/uv run python manage.py createsuperuser
+sudo -u www-data /var/www/.local/bin/uv run python manage.py createsuperuser
 ```
 
 ## Step 8: Configure Supervisor
@@ -201,13 +201,13 @@ cd /var/www/mealplanner
 sudo -u www-data git pull
 
 # Update dependencies
-sudo -u www-data /home/www-data/.local/bin/uv sync
+sudo -u www-data /var/www/.local/bin/uv sync
 
 # Collect static files
-sudo -u www-data /home/www-data/.local/bin/uv run python manage.py collectstatic --noinput
+sudo -u www-data /var/www/.local/bin/uv run python manage.py collectstatic --noinput
 
 # Run migrations
-sudo -u www-data /home/www-data/.local/bin/uv run python manage.py migrate
+sudo -u www-data /var/www/.local/bin/uv run python manage.py migrate
 
 # Restart application
 sudo supervisorctl restart mealplanner
@@ -231,7 +231,7 @@ sudo tail -100 /var/log/mealplanner/supervisor-stderr.log
 ### Test gunicorn manually
 ```bash
 cd /var/www/mealplanner
-sudo -u www-data /home/www-data/.local/bin/uv run gunicorn --bind 127.0.0.1:8000 mealplanner.wsgi:application
+sudo -u www-data /var/www/.local/bin/uv run gunicorn --bind 127.0.0.1:8070 mealplanner.wsgi:application
 ```
 
 ### Check nginx config
