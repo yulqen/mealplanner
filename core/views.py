@@ -1,5 +1,6 @@
 import markdown
 from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
@@ -7,6 +8,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm
 from .models import Ingredient, MealType, PlannedMeal, Recipe, ShoppingCategory, ShoppingList, WeekPlan
 from .services.shuffle import shuffle_meals
+
+
+def logout(request):
+    """Logout view that accepts both GET and POST."""
+    auth_logout(request)
+    return redirect("login")
 
 
 @login_required
