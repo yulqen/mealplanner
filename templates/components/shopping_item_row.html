@@ -1,0 +1,38 @@
+<div id="item-{{ item.pk }}"
+     data-item-name="{{ item.name }}"
+     class="flex items-center px-4 py-3 hover:bg-gray-50 {% if item.is_checked %}bg-gray-50{% endif %}">
+    <!-- Checkbox -->
+    <form hx-post="{% url 'shopping_check' shopping_list.pk item.pk %}"
+          hx-target="#item-{{ item.pk }}"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <button type="submit"
+                class="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
+                       {% if item.is_checked %}
+                       bg-green-500 border-green-500 text-white
+                       {% else %}
+                       border-gray-300 hover:border-green-400
+                       {% endif %}">
+            {% if item.is_checked %}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+            {% endif %}
+        </button>
+    </form>
+
+    <!-- Item Details -->
+    <div class="ml-3 flex-1 min-w-0">
+        <p class="text-sm font-medium {% if item.is_checked %}text-gray-400 line-through{% else %}text-gray-900{% endif %}">
+            {{ item.name }}
+            {% if item.is_manual %}
+            <span class="ml-1 text-xs text-indigo-500">(added)</span>
+            {% endif %}
+        </p>
+        {% if item.quantities %}
+        <p class="text-xs {% if item.is_checked %}text-gray-400{% else %}text-gray-500{% endif %}">
+            {{ item.quantities }}
+        </p>
+        {% endif %}
+    </div>
+</div>

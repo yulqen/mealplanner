@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center px-4">
+    <div class="max-w-md w-full space-y-6 sm:space-y-8">
+        <div>
+            <h2 class="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
+                🍽️ Meal Planner
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Sign in to your account
+            </p>
+        </div>
+        <form class="mt-6 sm:mt-8 space-y-5 sm:space-y-6" method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+            <div class="rounded-md bg-red-50 p-3 sm:p-4">
+                <p class="text-sm text-red-800">
+                    Invalid username or password. Please try again.
+                </p>
+            </div>
+            {% endif %}
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="id_username" class="sr-only">Username</label>
+                    <input id="id_username" name="username" type="text" autocomplete="username" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-3 sm:py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base sm:text-sm"
+                           placeholder="Username">
+                </div>
+                <div>
+                    <label for="id_password" class="sr-only">Password</label>
+                    <input id="id_password" name="password" type="password" autocomplete="current-password" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-3 sm:py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base sm:text-sm"
+                           placeholder="Password">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="group relative w-full flex justify-center py-3 sm:py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sign in
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

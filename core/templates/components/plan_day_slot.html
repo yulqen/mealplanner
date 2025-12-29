@@ -1,0 +1,117 @@
+<div class="bg-white rounded-lg shadow-sm p-3 sm:p-4">
+    <!-- Mobile: Stacked layout -->
+    <div class="sm:hidden">
+        <div class="flex items-center justify-between mb-2">
+            <!-- Day info -->
+            <div>
+                <span class="text-sm font-medium text-gray-900">{{ day.day_name }}</span>
+                <span class="text-xs text-gray-500 ml-1">{{ day.date|date:"j M" }}</span>
+            </div>
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <button type="button"
+                        onclick="openRecipePicker({{ day.offset }})"
+                        class="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1">
+                    {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
+                </button>
+                {% if day.planned_meal %}
+                <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
+                      hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
+                      hx-target="#day-slot-{{ day.offset }}"
+                      hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <button type="submit" class="text-gray-400 hover:text-red-600 p-1">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Meal info -->
+        {% if day.planned_meal and day.planned_meal.recipe %}
+        <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
+           class="block p-2 -mx-1 rounded-md hover:bg-gray-50 active:bg-gray-100">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
+                      style="background-color: {{ day.planned_meal.recipe.meal_type.colour }}20; color: {{ day.planned_meal.recipe.meal_type.colour }};">
+                    {{ day.planned_meal.recipe.meal_type.name }}
+                </span>
+                <span class="text-gray-900 font-medium text-sm truncate">{{ day.planned_meal.recipe.name }}</span>
+                {% if day.planned_meal.recipe.difficulty %}
+                <span class="text-xs text-gray-400 flex-shrink-0">
+                    {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
+                </span>
+                {% endif %}
+            </div>
+        </a>
+        {% elif day.planned_meal and day.planned_meal.note %}
+        <div class="text-gray-500 italic text-sm pl-1">
+            {{ day.planned_meal.note }}
+        </div>
+        {% else %}
+        <div class="text-gray-400 italic text-sm pl-1">
+            No meal planned
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Desktop: Horizontal layout -->
+    <div class="hidden sm:flex sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4">
+            <!-- Day info -->
+            <div class="w-24">
+                <div class="text-sm font-medium text-gray-900">{{ day.day_name }}</div>
+                <div class="text-xs text-gray-500">{{ day.date|date:"j M" }}</div>
+            </div>
+
+            <!-- Meal info -->
+            {% if day.planned_meal and day.planned_meal.recipe %}
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      style="background-color: {{ day.planned_meal.recipe.meal_type.colour }}20; color: {{ day.planned_meal.recipe.meal_type.colour }};">
+                    {{ day.planned_meal.recipe.meal_type.name }}
+                </span>
+                <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
+                   class="text-gray-900 hover:text-indigo-600 font-medium">
+                    {{ day.planned_meal.recipe.name }}
+                </a>
+                {% if day.planned_meal.recipe.difficulty %}
+                <span class="text-sm text-gray-400">
+                    {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
+                </span>
+                {% endif %}
+            </div>
+            {% elif day.planned_meal and day.planned_meal.note %}
+            <div class="text-gray-500 italic">
+                {{ day.planned_meal.note }}
+            </div>
+            {% else %}
+            <div class="text-gray-400 italic">
+                No meal planned
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-2">
+            <button type="button"
+                    onclick="openRecipePicker({{ day.offset }})"
+                    class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
+            </button>
+            {% if day.planned_meal %}
+            <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
+                  hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
+                  hx-target="#day-slot-{{ day.offset }}"
+                  hx-swap="innerHTML">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-gray-400 hover:text-red-600">
+                    ✕
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>

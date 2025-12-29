@@ -1,0 +1,67 @@
+{% if recipes %}
+<div class="space-y-2 sm:space-y-3">
+    {% for recipe in recipes %}
+    <a href="{% url 'recipe_detail' recipe.pk %}"
+       class="block bg-white rounded-lg shadow-sm hover:shadow-md active:bg-gray-50 transition-shadow p-3 sm:p-4">
+        <div class="flex justify-between items-start">
+            <div class="flex-1 min-w-0">
+                <h3 class="text-base sm:text-lg font-medium text-gray-900 truncate">{{ recipe.name }}</h3>
+                <div class="mt-1 flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-500">
+                    <!-- Meal Type Badge -->
+                    <span class="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          style="background-color: {{ recipe.meal_type.colour }}20; color: {{ recipe.meal_type.colour }};">
+                        {{ recipe.meal_type.name }}
+                    </span>
+
+                    <!-- Difficulty -->
+                    {% if recipe.difficulty %}
+                    <span class="flex items-center text-xs">
+                        {% for i in "123" %}
+                            {% if forloop.counter <= recipe.difficulty %}
+                            <span class="text-yellow-400">●</span>
+                            {% else %}
+                            <span class="text-gray-300">○</span>
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Stats -->
+                <p class="mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-500">
+                    {{ recipe.times_made_count }}× made
+                    {% if recipe.last_made_date %}
+                    · {{ recipe.last_made_date|date:"j M" }}
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Arrow indicator -->
+            <span class="text-gray-400 ml-2 sm:ml-4">→</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-12 bg-white rounded-lg shadow-sm">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No recipes found</h3>
+    <p class="mt-1 text-sm text-gray-500">
+        {% if current_search or current_meal_type or current_difficulty %}
+        Try adjusting your filters.
+        {% else %}
+        Get started by adding your first recipe.
+        {% endif %}
+    </p>
+    {% if not current_search and not current_meal_type and not current_difficulty %}
+    <div class="mt-6">
+        <a href="{% url 'recipe_create' %}"
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            + Add Recipe
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

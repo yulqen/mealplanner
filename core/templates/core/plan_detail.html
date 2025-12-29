@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Week of {{ plan.start_date|date:"j M Y" }} - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="space-y-4 sm:space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+        <div>
+            <a href="{% url 'plan_list' %}" class="text-gray-500 hover:text-gray-700 text-sm">
+                ← Back to plans
+            </a>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">
+                Week of {{ plan.start_date|date:"j M Y" }}
+            </h1>
+            <p class="text-sm text-gray-500">
+                {{ plan.start_date|date:"l j M" }} - {{ days.6.date|date:"l j M" }}
+            </p>
+        </div>
+        <div class="flex gap-2 sm:gap-3">
+            <form method="post" action="{% url 'plan_shuffle' plan.pk %}" class="flex-1 sm:flex-none">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <span class="mr-1">🎲</span> Shuffle
+                </button>
+            </form>
+            <a href="{% url 'shopping_generate' plan.pk %}"
+               class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <span class="mr-1">🛒</span> <span class="hidden sm:inline">Generate </span>Shop List
+            </a>
+        </div>
+    </div>
+
+    <!-- Days Grid -->
+    <div class="space-y-2 sm:space-y-3">
+        {% for day in days %}
+        <div id="day-slot-{{ day.offset }}">
+            {% include "components/plan_day_slot.html" %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recipe Picker Modal -->
+<div id="recipe-picker-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-end sm:items-center justify-center z-50">
+    <div class="bg-white rounded-t-xl sm:rounded-lg shadow-xl w-full sm:max-w-md sm:mx-4 max-h-[85vh] sm:max-h-[80vh] flex flex-col">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">Choose Recipe</h3>
+            <button type="button" onclick="closeRecipePicker()" class="p-2 -mr-2 text-gray-400 hover:text-gray-500">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-3 sm:p-4 border-b border-gray-200">
+            <input type="text" id="recipe-search" placeholder="Search recipes..."
+                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                   oninput="filterRecipes(this.value)">
+        </div>
+        <div class="overflow-y-auto flex-1 p-2">
+            <div id="recipe-options" class="space-y-1">
+                {% for recipe in recipes %}
+                <button type="button"
+                        class="recipe-option w-full text-left px-3 sm:px-4 py-3 rounded hover:bg-indigo-50 active:bg-indigo-100 flex items-center justify-between"
+                        data-recipe-id="{{ recipe.pk }}"
+                        data-recipe-name="{{ recipe.name|lower }}"
+                        onclick="selectRecipe({{ recipe.pk }})">
+                    <span>
+                        <span class="font-medium text-sm sm:text-base">{{ recipe.name }}</span>
+                        <span class="text-xs sm:text-sm text-gray-500 ml-2">
+                            {% if recipe.difficulty %}
+                            {% for i in "123" %}{% if forloop.counter <= recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
+                            {% endif %}
+                        </span>
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2"
+                          style="background-color: {{ recipe.meal_type.colour }}20; color: {{ recipe.meal_type.colour }};">
+                        {{ recipe.meal_type.name }}
+                    </span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="p-3 sm:p-4 border-t border-gray-200 safe-area-bottom">
+            <button type="button" onclick="selectRecipe('')"
+                    class="w-full text-center px-4 py-3 sm:py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md">
+                Clear (no recipe)
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentDayOffset = null;
+
+function openRecipePicker(dayOffset) {
+    currentDayOffset = dayOffset;
+    document.getElementById('recipe-picker-modal').classList.remove('hidden');
+    document.getElementById('recipe-search').value = '';
+    filterRecipes('');
+    document.getElementById('recipe-search').focus();
+}
+
+function closeRecipePicker() {
+    document.getElementById('recipe-picker-modal').classList.add('hidden');
+    currentDayOffset = null;
+}
+
+function filterRecipes(query) {
+    const options = document.querySelectorAll('.recipe-option');
+    const lowerQuery = query.toLowerCase();
+    options.forEach(opt => {
+        const name = opt.dataset.recipeName;
+        opt.style.display = name.includes(lowerQuery) ? '' : 'none';
+    });
+}
+
+function selectRecipe(recipeId) {
+    if (currentDayOffset === null) return;
+
+    const formData = new FormData();
+    formData.append('recipe_id', recipeId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch(`{% url 'plan_assign' plan.pk 0 %}`.replace('/0/', `/${currentDayOffset}/`), {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById(`day-slot-${currentDayOffset}`).innerHTML = html;
+        closeRecipePicker();
+    });
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRecipePicker();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('recipe-picker-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRecipePicker();
+    }
+});
+</script>
+{% endblock %}

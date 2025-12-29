@@ -1,0 +1,4 @@
+/* Compiled Tailwind CSS will go here */
+/* Run: ./tailwindcss -i core/static/core/css/input.css -o core/static/core/css/styles.css --watch */
+
+/* Minimal fallback styles if Tailwind hasn't been compiled */

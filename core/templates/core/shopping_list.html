@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping List - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="space-y-4 sm:space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Shopping List</h1>
+            {% if shopping_list %}
+            <p class="text-sm text-gray-500">{{ shopping_list.name }}</p>
+            {% endif %}
+        </div>
+        {% if shopping_list %}
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Store selector -->
+            <form hx-post="{% url 'shopping_change_store' shopping_list.pk %}"
+                  hx-target="#shopping-items-list"
+                  hx-swap="innerHTML"
+                  class="flex-1 sm:flex-none">
+                {% csrf_token %}
+                <select name="store"
+                        onchange="this.form.requestSubmit()"
+                        class="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2">
+                    {% for store in stores %}
+                    <option value="{{ store.pk }}" {% if shopping_list.store_id == store.pk %}selected{% endif %}>
+                        {{ store.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <!-- Clear actions -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open"
+                        type="button"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Clear
+                    <svg class="ml-1 sm:ml-2 -mr-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open"
+                     @click.away="open = false"
+                     x-transition
+                     class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div class="py-1">
+                        <form method="post" action="{% url 'shopping_clear' shopping_list.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="type" value="checked">
+                            <button type="submit"
+                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Clear checked items
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'shopping_clear' shopping_list.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="type" value="all">
+                            <button type="submit"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100">
+                                Clear all items
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if shopping_list %}
+    <!-- Add Item Form -->
+    <div class="bg-white rounded-lg shadow-sm p-3 sm:p-4" id="add-item-form">
+        <form id="shopping-add-form"
+              hx-post="{% url 'shopping_add' shopping_list.pk %}"
+              hx-target="#shopping-items-list"
+              hx-swap="innerHTML"
+              class="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-3 sm:items-end">
+            {% csrf_token %}
+            <!-- Item name - full width on mobile -->
+            <div class="w-full sm:flex-1 sm:min-w-[200px] relative">
+                <label for="item-name" class="block text-xs font-medium text-gray-500 mb-1">Item</label>
+                <input type="text"
+                       name="name"
+                       id="item-name"
+                       autocomplete="off"
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                       placeholder="Item name"
+                       required>
+                <input type="hidden" name="ingredient_id" id="ingredient-id" value="">
+                <div id="item-autocomplete" class="absolute z-10 w-full mt-1"></div>
+            </div>
+            <!-- Category and Quantity row on mobile -->
+            <div class="flex gap-2 sm:gap-3">
+                <div class="flex-1 sm:w-40 sm:flex-none">
+                    <label for="item-category" class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                    <select name="category"
+                            id="item-category"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2">
+                        <option value="">---------</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="w-24 sm:w-32">
+                    <label for="item-quantities" class="block text-xs font-medium text-gray-500 mb-1">Qty</label>
+                    <input type="text"
+                           name="quantities"
+                           id="item-quantities"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                           placeholder="e.g., 2">
+                </div>
+            </div>
+            <!-- Add button - full width on mobile -->
+            <button type="submit"
+                    class="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800">
+                Add Item
+            </button>
+        </form>
+    </div>
+
+    <!-- Duplicate Warning Modal -->
+    <div id="duplicate-warning" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-4 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Item Already Exists</h3>
+            <p class="text-sm text-gray-500 mb-4" id="duplicate-message"></p>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
+                <button type="button" onclick="closeDuplicateWarning()"
+                        class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button type="button" onclick="addDuplicateAnyway()"
+                        class="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Add Anyway
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping Items with HTMX Polling -->
+    <div id="shopping-items-list"
+         hx-get="{% url 'shopping_list' shopping_list.pk %}?items_only=1"
+         hx-trigger="every 5s"
+         hx-swap="innerHTML">
+        {% include "components/shopping_items_only.html" %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-8 sm:py-12 bg-white rounded-lg shadow-sm px-4">
+        <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No active shopping list</h3>
+        <p class="mt-1 text-sm text-gray-500">Generate a shopping list from a week plan to get started.</p>
+        <div class="mt-4 sm:mt-6">
+            <a href="{% url 'plan_list' %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                View Week Plans
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if shopping_list %}
+<script>
+// Clear form after successful add
+function clearAddForm() {
+    document.getElementById('item-name').value = '';
+    document.getElementById('ingredient-id').value = '';
+    document.getElementById('item-quantities').value = '';
+    document.getElementById('item-category').value = '';
+    document.getElementById('item-autocomplete').innerHTML = '';
+}
+
+// Select ingredient from autocomplete
+function selectIngredient(id, name, categoryId) {
+    document.getElementById('item-name').value = name;
+    document.getElementById('ingredient-id').value = id;
+    document.getElementById('item-autocomplete').innerHTML = '';
+
+    // Auto-select category if ingredient has one
+    if (categoryId) {
+        document.getElementById('item-category').value = categoryId;
+    }
+}
+
+// Select item name without ingredient (for manual items)
+function selectItemName(name) {
+    document.getElementById('item-name').value = name;
+    document.getElementById('ingredient-id').value = '';
+    document.getElementById('item-autocomplete').innerHTML = '';
+}
+
+// Autocomplete functionality
+let autocompleteTimeout = null;
+const itemNameInput = document.getElementById('item-name');
+
+itemNameInput.addEventListener('input', function() {
+    clearTimeout(autocompleteTimeout);
+    const query = this.value.trim();
+
+    if (query.length < 2) {
+        document.getElementById('item-autocomplete').innerHTML = '';
+        return;
+    }
+
+    autocompleteTimeout = setTimeout(() => {
+        fetch(`{% url 'shopping_item_autocomplete' shopping_list.pk %}?name=${encodeURIComponent(query)}`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('item-autocomplete').innerHTML = html;
+            });
+    }, 300);
+});
+
+// Close autocomplete when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#add-item-form')) {
+        document.getElementById('item-autocomplete').innerHTML = '';
+    }
+});
+
+// Clear form only after successful POST submission
+document.getElementById('shopping-add-form').addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.successful && evt.detail.requestConfig.verb === 'post') {
+        clearAddForm();
+    }
+});
+
+// Duplicate warning handling
+let pendingFormData = null;
+
+function showDuplicateWarning(itemName) {
+    document.getElementById('duplicate-message').textContent =
+        `"${itemName}" is already in your shopping list. Do you want to add it again?`;
+    document.getElementById('duplicate-warning').classList.remove('hidden');
+}
+
+function closeDuplicateWarning() {
+    document.getElementById('duplicate-warning').classList.add('hidden');
+    pendingFormData = null;
+}
+
+function addDuplicateAnyway() {
+    if (pendingFormData) {
+        pendingFormData.append('force_add', 'true');
+        htmx.ajax('POST', '{% url "shopping_add" shopping_list.pk %}', {
+            target: '#shopping-items-list',
+            swap: 'innerHTML',
+            values: Object.fromEntries(pendingFormData)
+        }).then(() => {
+            clearAddForm();
+        });
+    }
+    closeDuplicateWarning();
+}
+
+// Intercept form submission to check for duplicates
+document.getElementById('shopping-add-form').addEventListener('htmx:configRequest', function(evt) {
+    // Only check on POST requests
+    if (evt.detail.verb !== 'post') return;
+
+    // Get existing items from the page
+    const existingItems = Array.from(document.querySelectorAll('[data-item-name]'))
+        .map(el => el.dataset.itemName.toLowerCase());
+    const newItemName = document.getElementById('item-name').value.toLowerCase();
+
+    if (existingItems.includes(newItemName) && !evt.detail.parameters.force_add) {
+        evt.preventDefault();
+        pendingFormData = new FormData(this);
+        showDuplicateWarning(document.getElementById('item-name').value);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

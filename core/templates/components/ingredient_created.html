@@ -1,0 +1,31 @@
+<script>
+// Close modal and add the new ingredient to the active select
+(function() {
+    const newIngredient = {
+        id: {{ ingredient.id }},
+        name: "{{ ingredient.name|escapejs }}"
+    };
+
+    // Find the active ingredient select (the one that triggered the autocomplete)
+    const activeSelect = document.querySelector('.ingredient-select-active');
+    if (activeSelect) {
+        // Add new option and select it
+        const option = document.createElement('option');
+        option.value = newIngredient.id;
+        option.textContent = newIngredient.name;
+        option.selected = true;
+        activeSelect.appendChild(option);
+        activeSelect.classList.remove('ingredient-select-active');
+    }
+
+    // Clear the modal
+    document.getElementById('inline-ingredient-result').innerHTML = '';
+
+    // Show success message
+    const msg = document.createElement('div');
+    msg.className = 'fixed top-4 right-4 bg-green-50 text-green-800 px-4 py-2 rounded-md shadow-lg z-50';
+    msg.textContent = 'Ingredient "{{ ingredient.name|escapejs }}" created!';
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+})();
+</script>

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Shopping List - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="mb-4 sm:mb-6">
+        <a href="{% url 'plan_detail' plan.pk %}" class="text-gray-500 hover:text-gray-700 text-sm">
+            ← Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+        <h1 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">Generate Shopping List</h1>
+        <p class="text-sm text-gray-500 mb-4 sm:mb-6">
+            For: <strong>{{ plan }}</strong>
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label for="store" class="block text-sm font-medium text-gray-700 mb-1">
+                        Select Store
+                    </label>
+                    <p class="text-xs text-gray-500 mb-2">
+                        Items sorted by store layout.
+                    </p>
+                    <select name="store" id="store"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2.5 sm:py-2">
+                        {% for store in stores %}
+                        <option value="{{ store.pk }}" {% if store.is_default %}selected{% endif %}>
+                            {{ store.name }}{% if store.is_default %} (Default){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4">
+                    <a href="{% url 'plan_detail' plan.pk %}"
+                       class="w-full sm:w-auto text-center px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            class="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                        Generate List
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

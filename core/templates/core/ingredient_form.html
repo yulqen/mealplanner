@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <!-- Header -->
+    <div class="mb-4 sm:mb-6">
+        <a href="{% url 'ingredient_list' %}" class="text-gray-500 hover:text-gray-700 text-sm">
+            ← Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{{ title }}</h1>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <!-- Name -->
+            <div>
+                <label for="id_name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" name="name" id="id_name"
+                       value="{{ form.name.value|default:'' }}"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                       placeholder="e.g., Onion, Olive oil"
+                       required>
+                {% if form.name.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Category and Unit row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Category -->
+                <div>
+                    <label for="id_category" class="block text-sm font-medium text-gray-700">Category</label>
+                    <select name="category" id="id_category"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                            required>
+                        <option value="">Select...</option>
+                        {% for choice in form.category.field.queryset %}
+                        <option value="{{ choice.pk }}" {% if form.category.value|stringformat:"s" == choice.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ choice.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.category.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Default Unit -->
+                <div>
+                    <label for="id_default_unit" class="block text-sm font-medium text-gray-700">
+                        Unit <span class="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input type="text" name="default_unit" id="id_default_unit"
+                           value="{{ form.default_unit.value|default:'' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                           placeholder="e.g., g, ml, tin">
+                </div>
+            </div>
+
+            <!-- Pantry Staple -->
+            <div class="flex items-start py-2">
+                <div class="flex items-center h-5">
+                    <input type="checkbox" name="is_pantry_staple" id="id_is_pantry_staple"
+                           class="h-5 w-5 sm:h-4 sm:w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                           {% if form.is_pantry_staple.value %}checked{% endif %}>
+                </div>
+                <div class="ml-3">
+                    <label for="id_is_pantry_staple" class="text-sm font-medium text-gray-700">Pantry Staple</label>
+                    <p class="text-xs sm:text-sm text-gray-500">Excluded from shopping lists by default.</p>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
+                <a href="{% url 'ingredient_list' %}"
+                   class="w-full sm:w-auto text-center px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700">
+                    {{ submit_text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

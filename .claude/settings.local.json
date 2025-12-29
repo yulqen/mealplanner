@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(uv init:*)",
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(timeout 3 uv run:*)",
+      "Bash(grep:*)",
+      "Bash(DJANGO_SETTINGS_MODULE=mealplanner.settings uv run python manage.py shell:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "python-repl"
+  ]
+}

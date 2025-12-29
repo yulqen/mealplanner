@@ -1,0 +1,65 @@
+<!-- Add Item Form -->
+<div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+    <form hx-post="{% url 'shopping_add' shopping_list.pk %}"
+          hx-target="#shopping-items"
+          hx-swap="innerHTML"
+          class="flex flex-wrap gap-3 items-end">
+        {% csrf_token %}
+        <div class="flex-1 min-w-[200px]">
+            <label for="name" class="block text-xs font-medium text-gray-500 mb-1">Item</label>
+            {{ form.name }}
+        </div>
+        <div class="w-40">
+            <label for="category" class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+            {{ form.category }}
+        </div>
+        <div class="w-32">
+            <label for="quantities" class="block text-xs font-medium text-gray-500 mb-1">Quantity</label>
+            {{ form.quantities }}
+        </div>
+        <button type="submit"
+                class="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            Add
+        </button>
+    </form>
+</div>
+
+<!-- Items by Category -->
+{% if grouped_items %}
+<div class="space-y-4">
+    {% for category_name, category_data in grouped_items %}
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <!-- Category Header -->
+        <div class="px-4 py-2 border-b"
+             {% if category_data.category and category_data.category.colour %}
+             style="background-color: {{ category_data.category.colour }}15; border-left: 4px solid {{ category_data.category.colour }};"
+             {% else %}
+             style="background-color: #f3f4f6; border-left: 4px solid #9ca3af;"
+             {% endif %}>
+            <h3 class="text-sm font-medium text-gray-900">{{ category_name }}</h3>
+        </div>
+
+        <!-- Items -->
+        <div class="divide-y divide-gray-100">
+            {% for item in category_data.items %}
+            {% include "components/shopping_item_row.html" %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-8 bg-white rounded-lg shadow-sm">
+    <p class="text-sm text-gray-500">No items in this shopping list yet.</p>
+</div>
+{% endif %}
+
+<!-- Summary -->
+{% if grouped_items %}
+<div class="mt-4 text-center text-sm text-gray-500">
+    <span id="shopping-summary">
+        {% widthratio shopping_list.checked_count shopping_list.items.count 100 as percent %}
+        {{ shopping_list.checked_count|default:"0" }} of {{ shopping_list.items.count }} items checked
+    </span>
+</div>
+{% endif %}

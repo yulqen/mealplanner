@@ -1,0 +1,49 @@
+{% if query %}
+<div class="bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto">
+    {% if ingredients %}
+    <div class="py-1">
+        <div class="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">Ingredients</div>
+        {% for ing in ingredients %}
+        <button type="button"
+                onclick="selectIngredient('{{ ing.pk }}', '{{ ing.name|escapejs }}', '{{ ing.category_id|default:"" }}')"
+                class="w-full text-left px-4 py-2 hover:bg-indigo-50 flex items-center justify-between">
+            <span class="text-sm text-gray-900">{{ ing.name }}</span>
+            {% if ing.category %}
+            <span class="text-xs text-gray-500">{{ ing.category.name }}</span>
+            {% endif %}
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if existing_items %}
+    <div class="py-1 border-t border-gray-100">
+        <div class="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">Already in List</div>
+        {% for item in existing_items %}
+        <div class="px-4 py-2 flex items-center justify-between text-gray-400">
+            <span class="text-sm">{{ item.name }}</span>
+            <span class="text-xs">✓ in list</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not ingredients and not existing_items %}
+    <div class="py-1">
+        <button type="button"
+                onclick="selectItemName('{{ query|escapejs }}')"
+                class="w-full text-left px-4 py-2 hover:bg-indigo-50">
+            <span class="text-sm text-gray-900">Add "{{ query }}" as new item</span>
+        </button>
+    </div>
+    {% elif query %}
+    <div class="py-1 border-t border-gray-100">
+        <button type="button"
+                onclick="selectItemName('{{ query|escapejs }}')"
+                class="w-full text-left px-4 py-2 hover:bg-indigo-50">
+            <span class="text-sm text-indigo-600">+ Add "{{ query }}" as new item</span>
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

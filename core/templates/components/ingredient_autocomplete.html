@@ -1,0 +1,32 @@
+{% if ingredients %}
+<ul class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+    {% for ingredient in ingredients %}
+    <li>
+        <button type="button"
+                class="ingredient-option w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm"
+                data-id="{{ ingredient.id }}"
+                data-name="{{ ingredient.name }}">
+            <span class="font-medium">{{ ingredient.name }}</span>
+            <span class="text-gray-400 text-xs ml-2">{{ ingredient.category.name }}</span>
+        </button>
+    </li>
+    {% endfor %}
+    <li class="border-t border-gray-200">
+        <button type="button"
+                class="create-new-ingredient w-full text-left px-4 py-2 hover:bg-green-50 text-sm text-green-700"
+                data-name="{{ query }}">
+            + Create "{{ query }}" as new ingredient
+        </button>
+    </li>
+</ul>
+{% elif query %}
+<ul class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg">
+    <li>
+        <button type="button"
+                class="create-new-ingredient w-full text-left px-4 py-2 hover:bg-green-50 text-sm text-green-700"
+                data-name="{{ query }}">
+            + Create "{{ query }}" as new ingredient
+        </button>
+    </li>
+</ul>
+{% endif %}
