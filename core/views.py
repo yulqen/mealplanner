@@ -112,6 +112,7 @@ def recipe_create(request):
         "formset": formset,
         "title": "Add Recipe",
         "submit_text": "Create Recipe",
+        "all_ingredients": Ingredient.objects.order_by("name"),
     }
     return render(request, "core/recipe_form.html", context)
 
@@ -140,6 +141,7 @@ def recipe_edit(request, pk):
         "recipe": recipe,
         "title": f"Edit {recipe.name}",
         "submit_text": "Save Changes",
+        "all_ingredients": Ingredient.objects.order_by("name"),
     }
     return render(request, "core/recipe_form.html", context)
 

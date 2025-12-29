@@ -92,7 +92,7 @@
                         <span class="text-gray-400 font-normal">(Markdown supported)</span>
                     </label>
                     <textarea name="instructions" id="id_instructions" rows="10"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono px-3 py-2"
                               placeholder="1. First step...
 2. Second step...
 3. Third step..."
@@ -107,7 +107,7 @@
             <div class="border-t border-gray-200 pt-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-medium text-gray-900">Ingredients</h2>
-                    <a href="{% url 'ingredient_list' %}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800">
+                    <a href="{% url 'ingredient_list' %}" class="text-sm text-indigo-600 hover:text-indigo-800">
                         Manage Ingredients →
                     </a>
                 </div>
@@ -128,7 +128,7 @@
                         {% if ingredient_form.non_field_errors %}
                         <div class="mb-2 text-sm text-red-600">{{ ingredient_form.non_field_errors.0 }}</div>
                         {% endif %}
-                        <div class="flex gap-3 items-start">
+                        <div class="flex gap-2 sm:gap-3 items-start">
                         {% if ingredient_form.instance.pk %}
                         <input type="hidden" name="{{ ingredient_form.id.html_name }}" value="{{ ingredient_form.id.value }}">
                         {% endif %}
@@ -155,11 +155,11 @@
                             <div class="autocomplete-results"></div>
                         </div>
 
-                        <div class="w-32">
+                        <div class="w-24 sm:w-32">
                             <input type="text" name="{{ ingredient_form.quantity.html_name }}"
                                    value="{{ ingredient_form.quantity.value|default:'' }}"
-                                   placeholder="Quantity"
-                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 {% if ingredient_form.quantity.errors %}border-red-300{% endif %}">
+                                   placeholder="Qty"
+                                   class="quantity-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 {% if ingredient_form.quantity.errors %}border-red-300{% endif %}">
                             {% if ingredient_form.quantity.errors %}
                             <p class="mt-1 text-xs text-red-600">{{ ingredient_form.quantity.errors.0 }}</p>
                             {% endif %}
@@ -175,17 +175,36 @@
                                 <input type="checkbox" name="{{ ingredient_form.DELETE.html_name }}"
                                        class="delete-checkbox rounded border-gray-300 text-red-600 focus:ring-red-500 mr-1"
                                        {% if ingredient_form.DELETE.value %}checked{% endif %}>
-                                Remove
+                                <span class="hidden sm:inline">Remove</span>
+                                <span class="sm:hidden">×</span>
                             </label>
                         </div>
+                        {% else %}
+                        <!-- Remove button for new (unsaved) rows -->
+                        <button type="button"
+                                class="remove-ingredient-row p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Remove row">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
                         {% endif %}
                         </div><!-- close flex row -->
                     </div><!-- close ingredient-form -->
                     {% endfor %}
                 </div>
 
+                <!-- Add Ingredient Button -->
+                <button type="button" id="add-ingredient-btn"
+                        class="mt-3 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 sm:py-2 border border-dashed border-gray-300 rounded-md text-sm font-medium text-gray-600 bg-white hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+                    <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Ingredient
+                </button>
+
                 <p class="mt-3 text-sm text-gray-500">
-                    Type to search existing ingredients or create new ones. Leave rows blank if not needed.
+                    Type to search existing ingredients or create new ones.
                 </p>
             </div>
 
@@ -207,13 +226,87 @@
 <!-- Container for inline ingredient creation modal -->
 <div id="inline-ingredient-result"></div>
 
+<!-- Hidden template for new ingredient rows -->
+<template id="ingredient-row-template">
+    <div class="ingredient-form">
+        <div class="flex gap-2 sm:gap-3 items-start">
+            <div class="flex-1 relative">
+                <input type="text"
+                       class="ingredient-search block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                       placeholder="Search or type to create..."
+                       autocomplete="off">
+                <select name="recipe_ingredients-__prefix__-ingredient"
+                        class="ingredient-select hidden">
+                    <option value="">Select ingredient...</option>
+                    {% for ingredient in all_ingredients %}
+                    <option value="{{ ingredient.pk }}">{{ ingredient.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="autocomplete-results"></div>
+            </div>
+            <div class="w-24 sm:w-32">
+                <input type="text" name="recipe_ingredients-__prefix__-quantity"
+                       placeholder="Qty"
+                       class="quantity-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2">
+            </div>
+            <button type="button"
+                    class="remove-ingredient-row p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove row">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</template>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize search inputs with selected values
+    const ingredientFormsContainer = document.getElementById('ingredient-forms');
+    const addBtn = document.getElementById('add-ingredient-btn');
+    const template = document.getElementById('ingredient-row-template');
+    const totalFormsInput = document.querySelector('[name="recipe_ingredients-TOTAL_FORMS"]');
+
+    // Initialize existing rows
     document.querySelectorAll('.ingredient-form').forEach(initIngredientRow);
+
+    // Add new ingredient row
+    addBtn.addEventListener('click', function() {
+        const currentCount = parseInt(totalFormsInput.value);
+        const newRow = template.content.cloneNode(true).querySelector('.ingredient-form');
+
+        // Replace __prefix__ with the actual form number
+        newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, currentCount);
+
+        // Add to container and initialize
+        ingredientFormsContainer.appendChild(newRow);
+        initIngredientRow(newRow);
+
+        // Update total forms count
+        totalFormsInput.value = currentCount + 1;
+
+        // Focus the new search input
+        const searchInput = newRow.querySelector('.ingredient-search');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    });
+
+    // Handle remove button clicks (delegated)
+    ingredientFormsContainer.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.remove-ingredient-row');
+        if (removeBtn) {
+            const row = removeBtn.closest('.ingredient-form');
+            // Animate out
+            row.style.transition = 'opacity 0.2s, transform 0.2s';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(-10px)';
+            setTimeout(() => row.remove(), 200);
+        }
+    });
 
     function initIngredientRow(row) {
         const searchInput = row.querySelector('.ingredient-search');
@@ -294,7 +387,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(`{% url 'ingredient_create_inline' %}?name=${encodeURIComponent(name)}`)
                     .then(response => response.text())
                     .then(html => {
-                        document.getElementById('inline-ingredient-result').innerHTML = html;
+                        const resultContainer = document.getElementById('inline-ingredient-result');
+                        resultContainer.innerHTML = html;
+                        // IMPORTANT: Tell HTMX to process the new content so hx-* attributes work
+                        htmx.process(resultContainer);
                     });
 
                 container.innerHTML = '';

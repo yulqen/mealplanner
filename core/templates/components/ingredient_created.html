@@ -15,6 +15,14 @@
         option.textContent = newIngredient.name;
         option.selected = true;
         activeSelect.appendChild(option);
+
+        // Also update the visible search input with the new ingredient name
+        const container = activeSelect.closest('.ingredient-form') || activeSelect.parentElement;
+        const searchInput = container.querySelector('.ingredient-search');
+        if (searchInput) {
+            searchInput.value = newIngredient.name;
+        }
+
         activeSelect.classList.remove('ingredient-select-active');
     }
 

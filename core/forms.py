@@ -79,7 +79,8 @@ RecipeIngredientFormSet = forms.inlineformset_factory(
     Recipe,
     RecipeIngredient,
     form=RecipeIngredientForm,
-    extra=3,
+    extra=1,
+    max_num=50,
     can_delete=True,
 )
 
