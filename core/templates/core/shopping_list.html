@@ -188,12 +188,6 @@ function selectIngredient(id, name, categoryId) {
     }
 }
 
-// Select item name without ingredient (for manual items)
-function selectItemName(name) {
-    document.getElementById('item-name').value = name;
-    document.getElementById('ingredient-id').value = '';
-    document.getElementById('item-autocomplete').innerHTML = '';
-}
 
 // Autocomplete functionality
 let autocompleteTimeout = null;
