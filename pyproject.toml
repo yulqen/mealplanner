@@ -11,3 +11,8 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "whitenoise>=6.11.0",
 ]
+
+[dependency-groups]
+dev = [
+    "django-types>=0.22.0",
+]
