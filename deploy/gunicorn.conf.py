@@ -4,7 +4,7 @@
 import multiprocessing
 
 # Bind to localhost only (nginx proxies to us)
-bind = "127.0.0.1:8000"
+bind = "127.0.0.1:8070"
 
 # Workers: 2-4 x CPU cores is typical, but for a small family app, 2 is plenty
 workers = 2
