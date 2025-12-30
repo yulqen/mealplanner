@@ -38,6 +38,16 @@ urlpatterns = [
     path(
         "plans/<int:pk>/clear/<int:day>/", views.plan_clear_day, name="plan_clear_day"
     ),
+    path(
+        "plans/<int:pk>/assign-supplementary/<int:day>/",
+        views.plan_assign_supplementary,
+        name="plan_assign_supplementary",
+    ),
+    path(
+        "plans/<int:pk>/clear-supplementary/<int:day>/",
+        views.plan_clear_supplementary,
+        name="plan_clear_supplementary",
+    ),
     # Shopping Lists
     path("shopping/", views.shopping_list, name="shopping_list_current"),
     path("shopping/<int:pk>/", views.shopping_list, name="shopping_list"),

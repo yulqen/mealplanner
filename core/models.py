@@ -187,10 +187,14 @@ class PlannedMeal(models.Model):
     note = models.CharField(
         max_length=200, blank=True, help_text="e.g., 'Eating out', 'Leftovers'"
     )
+    is_supplementary = models.BooleanField(
+        default=False,
+        help_text="True for supplementary meals (e.g., kids' meals)",
+    )
 
     class Meta:
-        unique_together = ["week_plan", "day_offset"]
-        ordering = ["week_plan", "day_offset"]
+        unique_together = ["week_plan", "day_offset", "is_supplementary"]
+        ordering = ["week_plan", "day_offset", "is_supplementary"]
 
     def actual_date(self):
         """Return the actual date for this planned meal."""
@@ -200,9 +204,10 @@ class PlannedMeal(models.Model):
 
     def __str__(self):
         date_str = self.actual_date().strftime("%a %d %b")
+        prefix = "(Supp) " if self.is_supplementary else ""
         if self.recipe:
-            return f"{date_str}: {self.recipe.name}"
-        return f"{date_str}: {self.note or 'No meal'}"
+            return f"{date_str}: {prefix}{self.recipe.name}"
+        return f"{date_str}: {prefix}{self.note or 'No meal'}"
 
 
 class ShoppingList(models.Model):

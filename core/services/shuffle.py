@@ -15,8 +15,8 @@ def shuffle_meals(week_plan, num_days=7):
     Returns:
         List of PlannedMeal instances (saved)
     """
-    # Clear existing planned meals
-    week_plan.planned_meals.all().delete()
+    # Clear existing main planned meals (preserve supplementary meals)
+    week_plan.planned_meals.filter(is_supplementary=False).delete()
 
     # Get all active recipes grouped by meal type
     recipes_by_type = {}
@@ -51,6 +51,7 @@ def shuffle_meals(week_plan, num_days=7):
             week_plan=week_plan,
             day_offset=day_offset,
             recipe=chosen_recipe,
+            is_supplementary=False,
         )
         planned_meals.append(planned_meal)
         previous_type_id = chosen_type_id

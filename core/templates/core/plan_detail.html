@@ -95,9 +95,20 @@
 {% block extra_js %}
 <script>
 let currentDayOffset = null;
+let isSupplementaryPick = false;
 
-function openRecipePicker(dayOffset) {
+function openRecipePicker(dayOffset, isSupplementary = false) {
     currentDayOffset = dayOffset;
+    isSupplementaryPick = isSupplementary;
+
+    // Update modal title based on what we're picking
+    const title = isSupplementary ? "Choose Kids' Meal" : "Choose Recipe";
+    document.querySelector('#recipe-picker-modal h3').textContent = title;
+
+    // Hide "Clear" button for supplementary (they use the X button instead)
+    const clearBtn = document.querySelector('#recipe-picker-modal .safe-area-bottom');
+    clearBtn.style.display = isSupplementary ? 'none' : '';
+
     document.getElementById('recipe-picker-modal').classList.remove('hidden');
     document.getElementById('recipe-search').value = '';
     filterRecipes('');
@@ -107,6 +118,7 @@ function openRecipePicker(dayOffset) {
 function closeRecipePicker() {
     document.getElementById('recipe-picker-modal').classList.add('hidden');
     currentDayOffset = null;
+    isSupplementaryPick = false;
 }
 
 function filterRecipes(query) {
@@ -125,7 +137,13 @@ function selectRecipe(recipeId) {
     formData.append('recipe_id', recipeId);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-    fetch(`{% url 'plan_assign' plan.pk 0 %}`.replace('/0/', `/${currentDayOffset}/`), {
+    // Choose endpoint based on whether this is a supplementary meal
+    const baseUrl = isSupplementaryPick
+        ? `{% url 'plan_assign_supplementary' plan.pk 0 %}`
+        : `{% url 'plan_assign' plan.pk 0 %}`;
+    const url = baseUrl.replace('/0/', `/${currentDayOffset}/`);
+
+    fetch(url, {
         method: 'POST',
         body: formData,
     })

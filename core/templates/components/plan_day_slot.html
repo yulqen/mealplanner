@@ -10,7 +10,7 @@
             <!-- Actions -->
             <div class="flex items-center gap-3">
                 <button type="button"
-                        onclick="openRecipePicker({{ day.offset }})"
+                        onclick="openRecipePicker({{ day.offset }}, false)"
                         class="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1">
                     {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
                 </button>
@@ -29,7 +29,7 @@
                 {% endif %}
             </div>
         </div>
-        <!-- Meal info -->
+        <!-- Main meal info -->
         {% if day.planned_meal and day.planned_meal.recipe %}
         <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
            class="block p-2 -mx-1 rounded-md hover:bg-gray-50 active:bg-gray-100">
@@ -55,63 +55,135 @@
             No meal planned
         </div>
         {% endif %}
+
+        <!-- Supplementary meal (mobile) -->
+        {% if day.planned_meal and day.planned_meal.recipe %}
+        <div class="mt-2 pl-1 border-l-2 border-gray-200 ml-1">
+            {% if day.supplementary_meal and day.supplementary_meal.recipe %}
+            <div class="flex items-center justify-between">
+                <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
+                   class="flex items-center gap-2 text-xs text-gray-600 hover:text-indigo-600 py-1 pl-2">
+                    <span class="text-gray-400">Kids:</span>
+                    <span>{{ day.supplementary_meal.recipe.name }}</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            onclick="openRecipePicker({{ day.offset }}, true)"
+                            class="text-xs text-indigo-500 hover:text-indigo-700">
+                        Change
+                    </button>
+                    <form method="post" action="{% url 'plan_clear_supplementary' plan.pk day.offset %}" class="inline"
+                          hx-post="{% url 'plan_clear_supplementary' plan.pk day.offset %}"
+                          hx-target="#day-slot-{{ day.offset }}"
+                          hx-swap="innerHTML">
+                        {% csrf_token %}
+                        <button type="submit" class="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <button type="button"
+                    onclick="openRecipePicker({{ day.offset }}, true)"
+                    class="text-xs text-gray-400 hover:text-indigo-600 py-1 pl-2">
+                + Add kids' meal
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Desktop: Horizontal layout -->
-    <div class="hidden sm:flex sm:items-center sm:justify-between">
-        <div class="flex items-center gap-4">
-            <!-- Day info -->
-            <div class="w-24">
-                <div class="text-sm font-medium text-gray-900">{{ day.day_name }}</div>
-                <div class="text-xs text-gray-500">{{ day.date|date:"j M" }}</div>
-            </div>
+    <div class="hidden sm:block">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <!-- Day info -->
+                <div class="w-24">
+                    <div class="text-sm font-medium text-gray-900">{{ day.day_name }}</div>
+                    <div class="text-xs text-gray-500">{{ day.date|date:"j M" }}</div>
+                </div>
 
-            <!-- Meal info -->
-            {% if day.planned_meal and day.planned_meal.recipe %}
-            <div class="flex items-center gap-3">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      style="background-color: {{ day.planned_meal.recipe.meal_type.colour }}20; color: {{ day.planned_meal.recipe.meal_type.colour }};">
-                    {{ day.planned_meal.recipe.meal_type.name }}
-                </span>
-                <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
-                   class="text-gray-900 hover:text-indigo-600 font-medium">
-                    {{ day.planned_meal.recipe.name }}
-                </a>
-                {% if day.planned_meal.recipe.difficulty %}
-                <span class="text-sm text-gray-400">
-                    {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
-                </span>
+                <!-- Main meal info -->
+                {% if day.planned_meal and day.planned_meal.recipe %}
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          style="background-color: {{ day.planned_meal.recipe.meal_type.colour }}20; color: {{ day.planned_meal.recipe.meal_type.colour }};">
+                        {{ day.planned_meal.recipe.meal_type.name }}
+                    </span>
+                    <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
+                       class="text-gray-900 hover:text-indigo-600 font-medium">
+                        {{ day.planned_meal.recipe.name }}
+                    </a>
+                    {% if day.planned_meal.recipe.difficulty %}
+                    <span class="text-sm text-gray-400">
+                        {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
+                    </span>
+                    {% endif %}
+                </div>
+                {% elif day.planned_meal and day.planned_meal.note %}
+                <div class="text-gray-500 italic">
+                    {{ day.planned_meal.note }}
+                </div>
+                {% else %}
+                <div class="text-gray-400 italic">
+                    No meal planned
+                </div>
                 {% endif %}
             </div>
-            {% elif day.planned_meal and day.planned_meal.note %}
-            <div class="text-gray-500 italic">
-                {{ day.planned_meal.note }}
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        onclick="openRecipePicker({{ day.offset }}, false)"
+                        class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                    {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
+                </button>
+                {% if day.planned_meal %}
+                <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
+                      hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
+                      hx-target="#day-slot-{{ day.offset }}"
+                      hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <button type="submit" class="text-sm text-gray-400 hover:text-red-600">
+                        ✕
+                    </button>
+                </form>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="text-gray-400 italic">
-                No meal planned
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center gap-2">
-            <button type="button"
-                    onclick="openRecipePicker({{ day.offset }})"
-                    class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
-            </button>
-            {% if day.planned_meal %}
-            <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
-                  hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
-                  hx-target="#day-slot-{{ day.offset }}"
-                  hx-swap="innerHTML">
-                {% csrf_token %}
-                <button type="submit" class="text-sm text-gray-400 hover:text-red-600">
-                    ✕
+        <!-- Supplementary meal row (desktop) -->
+        {% if day.planned_meal and day.planned_meal.recipe %}
+        <div class="flex items-center justify-between mt-2 ml-28 pl-3 border-l-2 border-gray-200">
+            {% if day.supplementary_meal and day.supplementary_meal.recipe %}
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-400">Kids:</span>
+                <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
+                   class="text-sm text-gray-600 hover:text-indigo-600">
+                    {{ day.supplementary_meal.recipe.name }}
+                </a>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        onclick="openRecipePicker({{ day.offset }}, true)"
+                        class="text-xs text-indigo-500 hover:text-indigo-700">
+                    Change
                 </button>
-            </form>
+                <form method="post" action="{% url 'plan_clear_supplementary' plan.pk day.offset %}" class="inline"
+                      hx-post="{% url 'plan_clear_supplementary' plan.pk day.offset %}"
+                      hx-target="#day-slot-{{ day.offset }}"
+                      hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <button type="submit" class="text-xs text-gray-400 hover:text-red-500">✕</button>
+                </form>
+            </div>
+            {% else %}
+            <button type="button"
+                    onclick="openRecipePicker({{ day.offset }}, true)"
+                    class="text-xs text-gray-400 hover:text-indigo-600">
+                + Add kids' meal
+            </button>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </div>

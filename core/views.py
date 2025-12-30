@@ -394,13 +394,19 @@ def plan_detail(request, pk):
     days = []
     for i in range(7):
         day_date = plan.start_date + timedelta(days=i)
-        planned_meal = plan.planned_meals.filter(day_offset=i).first()
+        planned_meal = plan.planned_meals.filter(
+            day_offset=i, is_supplementary=False
+        ).first()
+        supplementary_meal = plan.planned_meals.filter(
+            day_offset=i, is_supplementary=True
+        ).first()
         days.append(
             {
                 "offset": i,
                 "date": day_date,
                 "day_name": day_date.strftime("%A"),
                 "planned_meal": planned_meal,
+                "supplementary_meal": supplementary_meal,
             }
         )
 
@@ -436,9 +442,9 @@ def plan_assign(request, pk, day):
         recipe_id = request.POST.get("recipe_id")
         note = request.POST.get("note", "")
 
-        # Get or create the planned meal for this day
+        # Get or create the planned meal for this day (main meal, not supplementary)
         planned_meal, created = PlannedMeal.objects.get_or_create(
-            week_plan=plan, day_offset=day, defaults={"note": note}
+            week_plan=plan, day_offset=day, is_supplementary=False, defaults={"note": note}
         )
 
         if recipe_id:
@@ -455,7 +461,12 @@ def plan_assign(request, pk, day):
     from datetime import timedelta
 
     day_date = plan.start_date + timedelta(days=day)
-    planned_meal = plan.planned_meals.filter(day_offset=day).first()
+    planned_meal = plan.planned_meals.filter(
+        day_offset=day, is_supplementary=False
+    ).first()
+    supplementary_meal = plan.planned_meals.filter(
+        day_offset=day, is_supplementary=True
+    ).first()
 
     context = {
         "plan": plan,
@@ -464,6 +475,7 @@ def plan_assign(request, pk, day):
             "date": day_date,
             "day_name": day_date.strftime("%A"),
             "planned_meal": planned_meal,
+            "supplementary_meal": supplementary_meal,
         },
         "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
     }
@@ -490,6 +502,81 @@ def plan_clear_day(request, pk, day):
             "date": day_date,
             "day_name": day_date.strftime("%A"),
             "planned_meal": None,
+            "supplementary_meal": None,
+        },
+        "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
+    }
+    return render(request, "components/plan_day_slot.html", context)
+
+
+@login_required
+def plan_assign_supplementary(request, pk, day):
+    """HTMX endpoint to assign a supplementary recipe (e.g., kids' meal) to a specific day."""
+    plan = get_object_or_404(WeekPlan, pk=pk)
+
+    if request.method == "POST":
+        recipe_id = request.POST.get("recipe_id")
+
+        if recipe_id:
+            recipe = get_object_or_404(Recipe, pk=recipe_id)
+            # Get or create the supplementary meal for this day
+            supplementary_meal, created = PlannedMeal.objects.get_or_create(
+                week_plan=plan, day_offset=day, is_supplementary=True
+            )
+            supplementary_meal.recipe = recipe
+            supplementary_meal.save()
+
+    # Return the updated day slot partial
+    from datetime import timedelta
+
+    day_date = plan.start_date + timedelta(days=day)
+    planned_meal = plan.planned_meals.filter(
+        day_offset=day, is_supplementary=False
+    ).first()
+    supplementary_meal = plan.planned_meals.filter(
+        day_offset=day, is_supplementary=True
+    ).first()
+
+    context = {
+        "plan": plan,
+        "day": {
+            "offset": day,
+            "date": day_date,
+            "day_name": day_date.strftime("%A"),
+            "planned_meal": planned_meal,
+            "supplementary_meal": supplementary_meal,
+        },
+        "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
+    }
+    return render(request, "components/plan_day_slot.html", context)
+
+
+@login_required
+def plan_clear_supplementary(request, pk, day):
+    """HTMX endpoint to clear a supplementary recipe from a specific day."""
+    plan = get_object_or_404(WeekPlan, pk=pk)
+
+    if request.method == "POST":
+        PlannedMeal.objects.filter(
+            week_plan=plan, day_offset=day, is_supplementary=True
+        ).delete()
+
+    # Return the updated day slot partial
+    from datetime import timedelta
+
+    day_date = plan.start_date + timedelta(days=day)
+    planned_meal = plan.planned_meals.filter(
+        day_offset=day, is_supplementary=False
+    ).first()
+
+    context = {
+        "plan": plan,
+        "day": {
+            "offset": day,
+            "date": day_date,
+            "day_name": day_date.strftime("%A"),
+            "planned_meal": planned_meal,
+            "supplementary_meal": None,
         },
         "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
     }
