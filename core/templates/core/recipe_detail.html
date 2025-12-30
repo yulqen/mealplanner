@@ -57,7 +57,7 @@
                         <li class="flex items-start text-sm sm:text-base">
                             <span class="text-indigo-500 mr-2">•</span>
                             <span class="text-gray-700">
-                                <strong>{{ ri.quantity }}</strong> {{ ri.ingredient.name }}
+                                <strong>{{ ri.quantity }}</strong> {{ ri.ingredient.name }}{% if ri.ingredient.is_pantry_staple %} <span class="text-green-600 text-xs">(pantry)</span>{% endif %}
                             </span>
                         </li>
                         {% endfor %}

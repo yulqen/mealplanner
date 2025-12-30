@@ -98,7 +98,8 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
             store = Store.objects.first()
 
     # Collect all recipe ingredients from planned meals
-    ingredient_quantities = {}  # {ingredient_id: {'ingredient': obj, 'quantities': []}}
+    # {ingredient_id: {'ingredient': obj, 'quantities': [], 'is_pantry': bool}}
+    ingredient_quantities = {}
 
     for planned_meal in week_plan.planned_meals.select_related("recipe").all():
         if not planned_meal.recipe:
@@ -109,14 +110,11 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
         ).all():
             ing = ri.ingredient
 
-            # Skip pantry staples
-            if ing.is_pantry_staple:
-                continue
-
             if ing.id not in ingredient_quantities:
                 ingredient_quantities[ing.id] = {
                     "ingredient": ing,
                     "quantities": [],
+                    "is_pantry": ing.is_pantry_staple,
                 }
             ingredient_quantities[ing.id]["quantities"].append(ri.quantity)
 
@@ -139,6 +137,7 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
     for data in ingredient_quantities.values():
         ing = data["ingredient"]
         quantities = data["quantities"]
+        is_pantry = data["is_pantry"]
 
         # Aggregate quantities intelligently
         aggregated = aggregate_quantities(quantities)
@@ -149,6 +148,7 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
             name=ing.name,
             category=ing.category,
             quantities=aggregated,
+            is_pantry_item=is_pantry,
         )
         items.append(item)
 

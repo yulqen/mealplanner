@@ -71,7 +71,7 @@ class Ingredient(models.Model):
         ShoppingCategory, on_delete=models.PROTECT, related_name="ingredients"
     )
     is_pantry_staple = models.BooleanField(
-        default=False, help_text="If true, excluded from shopping lists by default"
+        default=False, help_text="If true, flagged on shopping lists for verification"
     )
     default_unit = models.CharField(
         max_length=30, blank=True, help_text="e.g., 'g', 'ml', 'medium', 'tin'"
@@ -269,6 +269,9 @@ class ShoppingListItem(models.Model):
     )
     is_pantry_override = models.BooleanField(
         default=False, help_text="Manually added despite being a pantry staple"
+    )
+    is_pantry_item = models.BooleanField(
+        default=False, help_text="Item is a pantry staple (included for verification)"
     )
 
     class Meta:

@@ -23,14 +23,16 @@
 
     <!-- Item Details -->
     <div class="ml-3 flex-1 min-w-0">
-        <p class="text-sm font-medium {% if item.is_checked %}text-gray-400 line-through{% else %}text-gray-900{% endif %}">
+        <p class="text-sm font-medium {% if item.is_checked %}text-gray-400 line-through{% elif item.is_pantry_item %}text-green-700{% else %}text-gray-900{% endif %}">
             {{ item.name }}
-            {% if item.is_manual %}
+            {% if item.is_pantry_item %}
+            <span class="ml-1 text-xs text-green-600">(pantry)</span>
+            {% elif item.is_manual %}
             <span class="ml-1 text-xs text-indigo-500">(added)</span>
             {% endif %}
         </p>
         {% if item.quantities %}
-        <p class="text-xs {% if item.is_checked %}text-gray-400{% else %}text-gray-500{% endif %}">
+        <p class="text-xs {% if item.is_checked %}text-gray-400{% elif item.is_pantry_item %}text-green-600{% else %}text-gray-500{% endif %}">
             {{ item.quantities }}
         </p>
         {% endif %}
