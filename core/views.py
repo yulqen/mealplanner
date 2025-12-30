@@ -2,11 +2,11 @@ import markdown
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm
-from .models import Ingredient, MealType, PlannedMeal, Recipe, ShoppingCategory, ShoppingList, WeekPlan
+from .models import Ingredient, MealType, PlannedMeal, Recipe, RecipeIngredient, ShoppingCategory, ShoppingList, WeekPlan
 from .services.shuffle import shuffle_meals
 
 
@@ -78,9 +78,17 @@ def recipe_list(request):
 @login_required
 def recipe_detail(request, pk):
     """View recipe details - clean cooking view."""
+    # Prefetch ingredients sorted by category name, then ingredient name
+    # This ordering is required for the template's regroup tag to work correctly
+    ingredients_prefetch = Prefetch(
+        "recipe_ingredients",
+        queryset=RecipeIngredient.objects.select_related(
+            "ingredient__category"
+        ).order_by("ingredient__category__name", "ingredient__name"),
+    )
     recipe = get_object_or_404(
         Recipe.objects.select_related("meal_type").prefetch_related(
-            "recipe_ingredients__ingredient"
+            ingredients_prefetch
         ),
         pk=pk,
     )

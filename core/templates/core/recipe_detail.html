@@ -47,16 +47,24 @@
         {% if recipe.recipe_ingredients.all %}
         <div class="p-4 sm:p-6 border-b border-gray-200 bg-gray-50">
             <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Ingredients</h2>
-            <ul class="space-y-2">
-                {% for ri in recipe.recipe_ingredients.all %}
-                <li class="flex items-start text-sm sm:text-base">
-                    <span class="text-indigo-500 mr-2">•</span>
-                    <span class="text-gray-700">
-                        <strong>{{ ri.quantity }}</strong> {{ ri.ingredient.name }}
-                    </span>
-                </li>
+            {% regroup recipe.recipe_ingredients.all by ingredient.category as ingredient_groups %}
+            <div class="space-y-4">
+                {% for group in ingredient_groups %}
+                <div>
+                    <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{{ group.grouper.name }}</h3>
+                    <ul class="space-y-1.5">
+                        {% for ri in group.list %}
+                        <li class="flex items-start text-sm sm:text-base">
+                            <span class="text-indigo-500 mr-2">•</span>
+                            <span class="text-gray-700">
+                                <strong>{{ ri.quantity }}</strong> {{ ri.ingredient.name }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
         {% endif %}
 
