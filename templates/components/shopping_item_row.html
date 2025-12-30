@@ -37,4 +37,20 @@
         </p>
         {% endif %}
     </div>
+
+    <!-- Star Toggle -->
+    <form hx-post="{% url 'shopping_star' shopping_list.pk item.pk %}"
+          hx-target="#item-{{ item.pk }}"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <button type="submit"
+                class="flex-shrink-0 ml-3 p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Mark as checked in pantry">
+            <svg class="w-5 h-5 {% if item.is_starred %}text-blue-500{% else %}text-gray-300{% endif %} transition-colors"
+                 fill="currentColor"
+                 viewBox="0 0 24 24">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+            </svg>
+        </button>
+    </form>
 </div>

@@ -688,6 +688,26 @@ def shopping_check(request, pk, item_pk):
 
 
 @login_required
+def shopping_star(request, pk, item_pk):
+    """HTMX endpoint to toggle an item's star status."""
+    from .models import ShoppingListItem
+
+    shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    item = get_object_or_404(ShoppingListItem, pk=item_pk, shopping_list=shopping_list_obj)
+
+    if request.method == "POST":
+        item.is_starred = not item.is_starred
+        item.save()
+
+    # Return the updated item row
+    context = {
+        "item": item,
+        "shopping_list": shopping_list_obj,
+    }
+    return render(request, "components/shopping_item_row.html", context)
+
+
+@login_required
 def shopping_add(request, pk):
     """HTMX endpoint to add a manual item to the shopping list."""
     from .models import ShoppingListItem

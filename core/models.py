@@ -278,6 +278,9 @@ class ShoppingListItem(models.Model):
     is_pantry_item = models.BooleanField(
         default=False, help_text="Item is a pantry staple (included for verification)"
     )
+    is_starred = models.BooleanField(
+        default=False, help_text="User marked as checked in pantry"
+    )
 
     class Meta:
         ordering = ["shopping_list", "category", "name"]

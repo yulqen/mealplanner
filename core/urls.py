@@ -61,6 +61,11 @@ urlpatterns = [
         views.shopping_check,
         name="shopping_check",
     ),
+    path(
+        "shopping/<int:pk>/star/<int:item_pk>/",
+        views.shopping_star,
+        name="shopping_star",
+    ),
     path("shopping/<int:pk>/add/", views.shopping_add, name="shopping_add"),
     path(
         "shopping/<int:pk>/autocomplete/",
