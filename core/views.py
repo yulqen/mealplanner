@@ -828,3 +828,42 @@ def shopping_change_store(request, pk):
         return render(request, "components/shopping_items_only.html", context)
 
     return redirect("shopping_list", pk=pk)
+
+
+@login_required
+def shopping_edit_category(request, pk, item_pk):
+    """HTMX endpoint to change category for a manual shopping list item."""
+    from .models import ShoppingListItem
+
+    shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    item = get_object_or_404(ShoppingListItem, pk=item_pk, shopping_list=shopping_list_obj)
+
+    if request.method == "POST":
+        category_id = request.POST.get("category")
+        if category_id:
+            category = get_object_or_404(ShoppingCategory, pk=category_id)
+            item.category = category
+            item.save()
+            messages.success(request, f'Category updated for "{item.name}".')
+        else:
+            item.category = None
+            item.save()
+            messages.success(request, f'Category removed for "{item.name}".')
+
+        # Return updated items list
+        from .services.shopping import get_sorted_items
+
+        grouped_items = get_sorted_items(shopping_list_obj)
+        context = {
+            "shopping_list": shopping_list_obj,
+            "grouped_items": grouped_items,
+        }
+        return render(request, "components/shopping_items_only.html", context)
+
+    # GET request - render the modal form
+    context = {
+        "item": item,
+        "shopping_list": shopping_list_obj,
+        "categories": ShoppingCategory.objects.all(),
+    }
+    return render(request, "components/shopping_item_category_modal.html", context)

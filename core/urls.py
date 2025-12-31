@@ -78,4 +78,9 @@ urlpatterns = [
         views.shopping_change_store,
         name="shopping_change_store",
     ),
+    path(
+        "shopping/<int:pk>/edit-category/<int:item_pk>/",
+        views.shopping_edit_category,
+        name="shopping_edit_category",
+    ),
 ]
