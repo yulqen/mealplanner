@@ -76,6 +76,21 @@
             </div>
         </div>
 
+        <!-- Reference Link -->
+        {% if recipe.reference %}
+        <div class="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <a href="{{ recipe.reference }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                View original recipe
+            </a>
+        </div>
+        {% endif %}
+
         <!-- Stats Footer -->
         <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200 text-xs sm:text-sm text-gray-500">
             Made {{ recipe.times_made }} time{{ recipe.times_made|pluralize }}

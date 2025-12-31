@@ -101,6 +101,9 @@ class Recipe(models.Model):
         choices=DIFFICULTY_CHOICES, null=True, blank=True
     )
     instructions = models.TextField(help_text="Markdown supported")
+    reference = models.URLField(
+        blank=True, help_text="Link to the original recipe online"
+    )
     is_archived = models.BooleanField(
         default=False, help_text="Hidden from active recipe lists"
     )

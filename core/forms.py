@@ -16,7 +16,7 @@ from .models import (
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        fields = ["name", "meal_type", "difficulty", "instructions"]
+        fields = ["name", "meal_type", "difficulty", "instructions", "reference"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -39,6 +39,12 @@ class RecipeForm(forms.ModelForm):
                     "class": "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2",
                     "rows": 10,
                     "placeholder": "Enter cooking instructions (Markdown supported)",
+                }
+            ),
+            "reference": forms.URLInput(
+                attrs={
+                    "class": "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2",
+                    "placeholder": "https://example.com/recipe",
                 }
             ),
         }
