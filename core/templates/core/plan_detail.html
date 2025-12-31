@@ -55,8 +55,11 @@
         </div>
         <div class="p-3 sm:p-4 border-b border-gray-200">
             <input type="text" id="recipe-search" placeholder="Search recipes..."
-                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2 mb-2"
                    oninput="filterRecipes(this.value)">
+            <input type="text" id="for-people" placeholder="Who is this for? (e.g., 'Harvey and Sophie')"
+                   class="hidden block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                   maxlength="50">
         </div>
         <div class="overflow-y-auto flex-1 p-2">
             <div id="recipe-options" class="space-y-1">
@@ -102,12 +105,17 @@ function openRecipePicker(dayOffset, isSupplementary = false) {
     isSupplementaryPick = isSupplementary;
 
     // Update modal title based on what we're picking
-    const title = isSupplementary ? "Choose Kids' Meal" : "Choose Recipe";
+    const title = isSupplementary ? "Choose Additional Meal" : "Choose Recipe";
     document.querySelector('#recipe-picker-modal h3').textContent = title;
 
     // Hide "Clear" button for supplementary (they use the X button instead)
     const clearBtn = document.querySelector('#recipe-picker-modal .safe-area-bottom');
     clearBtn.style.display = isSupplementary ? 'none' : '';
+
+    // Show/hide "for_people" field based on whether this is supplementary
+    const forPeopleInput = document.getElementById('for-people');
+    forPeopleInput.classList.toggle('hidden', !isSupplementary);
+    forPeopleInput.value = '';
 
     document.getElementById('recipe-picker-modal').classList.remove('hidden');
     document.getElementById('recipe-search').value = '';
@@ -136,6 +144,14 @@ function selectRecipe(recipeId) {
     const formData = new FormData();
     formData.append('recipe_id', recipeId);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    // Include for_people if this is a supplementary meal
+    if (isSupplementaryPick) {
+        const forPeopleValue = document.getElementById('for-people').value;
+        if (forPeopleValue) {
+            formData.append('for_people', forPeopleValue);
+        }
+    }
 
     // Choose endpoint based on whether this is a supplementary meal
     const baseUrl = isSupplementaryPick

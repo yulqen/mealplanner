@@ -63,8 +63,10 @@
             <div class="flex items-center justify-between">
                 <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
                    class="flex items-center gap-2 text-xs text-gray-600 hover:text-indigo-600 py-1 pl-2">
-                    <span class="text-gray-400">Kids:</span>
                     <span>{{ day.supplementary_meal.recipe.name }}</span>
+                    {% if day.supplementary_meal.for_people %}
+                    <span class="text-gray-400">for {{ day.supplementary_meal.for_people }}</span>
+                    {% endif %}
                 </a>
                 <div class="flex items-center gap-2">
                     <button type="button"
@@ -85,7 +87,7 @@
             <button type="button"
                     onclick="openRecipePicker({{ day.offset }}, true)"
                     class="text-xs text-gray-400 hover:text-indigo-600 py-1 pl-2">
-                + Add kids' meal
+                + Add additional meal
             </button>
             {% endif %}
         </div>
@@ -156,11 +158,13 @@
         <div class="flex items-center justify-between mt-2 ml-28 pl-3 border-l-2 border-gray-200">
             {% if day.supplementary_meal and day.supplementary_meal.recipe %}
             <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-400">Kids:</span>
                 <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
                    class="text-sm text-gray-600 hover:text-indigo-600">
                     {{ day.supplementary_meal.recipe.name }}
                 </a>
+                {% if day.supplementary_meal.for_people %}
+                <span class="text-xs text-gray-400">for {{ day.supplementary_meal.for_people }}</span>
+                {% endif %}
             </div>
             <div class="flex items-center gap-2">
                 <button type="button"
@@ -180,7 +184,7 @@
             <button type="button"
                     onclick="openRecipePicker({{ day.offset }}, true)"
                     class="text-xs text-gray-400 hover:text-indigo-600">
-                + Add kids' meal
+                + Add additional meal
             </button>
             {% endif %}
         </div>

@@ -191,6 +191,11 @@ class PlannedMeal(models.Model):
         default=False,
         help_text="True for supplementary meals (e.g., kids' meals)",
     )
+    for_people = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="e.g., 'Harvey and Sophie' - who this meal is for",
+    )
 
     class Meta:
         unique_together = ["week_plan", "day_offset", "is_supplementary"]

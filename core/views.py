@@ -516,6 +516,7 @@ def plan_assign_supplementary(request, pk, day):
 
     if request.method == "POST":
         recipe_id = request.POST.get("recipe_id")
+        for_people = request.POST.get("for_people", "")
 
         if recipe_id:
             recipe = get_object_or_404(Recipe, pk=recipe_id)
@@ -524,6 +525,7 @@ def plan_assign_supplementary(request, pk, day):
                 week_plan=plan, day_offset=day, is_supplementary=True
             )
             supplementary_meal.recipe = recipe
+            supplementary_meal.for_people = for_people
             supplementary_meal.save()
 
     # Return the updated day slot partial
