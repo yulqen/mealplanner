@@ -21,16 +21,29 @@
               hx-push-url="true"
               class="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-4 sm:items-end">
 
-            <!-- Search - First on mobile -->
-            <div class="w-full sm:flex-1 sm:min-w-[200px] sm:order-last">
-                <label for="search-input" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Search</label>
-                <input type="text" id="search-input" name="search" value="{{ current_search }}"
-                       placeholder="Search recipes..."
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2">
+            <!-- Search + Ace Filter row -->
+            <div class="flex gap-2 sm:gap-3 sm:flex-1 sm:min-w-[200px] sm:order-last items-end">
+                <!-- Search -->
+                <div class="flex-1">
+                    <label for="search-input" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input type="text" id="search-input" name="search" value="{{ current_search }}"
+                           placeholder="Search recipes..."
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2">
+                </div>
+
+                <!-- Ace Tag Filter -->
+                <div class="pb-0.5 sm:pb-0">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="ace_tag" value="1"
+                               {% if current_ace_tag %}checked{% endif %}
+                               class="rounded border-gray-300 text-amber-500 focus:ring-amber-500 h-4 w-4">
+                        <span class="ml-2 text-xs sm:text-sm font-medium text-gray-700">Ace only</span>
+                    </label>
+                </div>
             </div>
 
             <!-- Filter row on mobile -->
-            <div class="grid grid-cols-3 gap-2 sm:contents">
+            <div class="grid grid-cols-2 gap-2 sm:contents">
                 <!-- Meal Type Filter -->
                 <div>
                     <label for="meal_type" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type</label>

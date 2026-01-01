@@ -107,6 +107,9 @@ class Recipe(models.Model):
     is_archived = models.BooleanField(
         default=False, help_text="Hidden from active recipe lists"
     )
+    ace_tag = models.BooleanField(
+        default=False, help_text="Marked as a favourite recipe"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

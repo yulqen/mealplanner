@@ -4,6 +4,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Max, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm
 from .models import Ingredient, MealType, PlannedMeal, Recipe, RecipeIngredient, ShoppingCategory, ShoppingList, WeekPlan
@@ -43,6 +44,11 @@ def recipe_list(request):
     if difficulty:
         recipes = recipes.filter(difficulty=difficulty)
 
+    # Filter by ace tag
+    ace_tag = request.GET.get("ace_tag")
+    if ace_tag:
+        recipes = recipes.filter(ace_tag=True)
+
     # Search by name
     search = request.GET.get("search", "").strip()
     if search:
@@ -64,6 +70,7 @@ def recipe_list(request):
         "meal_types": meal_types,
         "current_meal_type": meal_type_id,
         "current_difficulty": difficulty,
+        "current_ace_tag": ace_tag,
         "current_search": search,
         "current_sort": sort,
     }
@@ -867,3 +874,21 @@ def shopping_edit_category(request, pk, item_pk):
         "categories": ShoppingCategory.objects.all(),
     }
     return render(request, "components/shopping_item_category_modal.html", context)
+
+
+@login_required
+@csrf_exempt
+def recipe_toggle_ace(request, pk):
+    """HTMX endpoint to toggle ace tag on a recipe."""
+    recipe = get_object_or_404(Recipe, pk=pk)
+    recipe.ace_tag = not recipe.ace_tag
+    recipe.save()
+
+    context = {"recipe": recipe}
+
+    if request.headers.get("HX-Request"):
+        if "card" in request.GET:
+            return render(request, "components/recipe_ace_tag_card.html", context)
+        return render(request, "components/recipe_ace_tag_detail.html", context)
+
+    return redirect("recipe_detail", pk=pk)

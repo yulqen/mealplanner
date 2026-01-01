@@ -40,6 +40,11 @@
                     <span class="ml-1 text-xs sm:text-sm">{{ recipe.get_difficulty_display }}</span>
                 </span>
                 {% endif %}
+
+                <!-- Ace Tag -->
+                <div id="ace-tag-wrapper">
+                    {% include "components/recipe_ace_tag_detail.html" %}
+                </div>
             </div>
         </div>
 
