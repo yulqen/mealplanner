@@ -44,6 +44,11 @@
                     {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
                 </span>
                 {% endif %}
+                {% if day.planned_meal.recipe.ace_tag %}
+                <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                {% endif %}
             </div>
         </a>
         {% elif day.planned_meal and day.planned_meal.note %}
@@ -64,6 +69,11 @@
                 <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
                    class="flex items-center gap-2 text-xs text-gray-600 hover:text-indigo-600 py-1 pl-2">
                     <span>{{ day.supplementary_meal.recipe.name }}</span>
+                    {% if day.supplementary_meal.recipe.ace_tag %}
+                    <svg class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    {% endif %}
                     {% if day.supplementary_meal.for_people %}
                     <span class="text-gray-400">for {{ day.supplementary_meal.for_people }}</span>
                     {% endif %}
@@ -120,6 +130,11 @@
                         {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
                     </span>
                     {% endif %}
+                    {% if day.planned_meal.recipe.ace_tag %}
+                    <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    {% endif %}
                 </div>
                 {% elif day.planned_meal and day.planned_meal.note %}
                 <div class="text-gray-500 italic">
@@ -162,6 +177,11 @@
                    class="text-sm text-gray-600 hover:text-indigo-600">
                     {{ day.supplementary_meal.recipe.name }}
                 </a>
+                {% if day.supplementary_meal.recipe.ace_tag %}
+                <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                {% endif %}
                 {% if day.supplementary_meal.for_people %}
                 <span class="text-xs text-gray-400">for {{ day.supplementary_meal.for_people }}</span>
                 {% endif %}
