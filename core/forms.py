@@ -80,6 +80,8 @@ class RecipeIngredientForm(forms.ModelForm):
         if quantity and not ingredient:
             raise forms.ValidationError("Please select an ingredient.")
 
+        return cleaned_data
+
 
 RecipeIngredientFormSet = forms.inlineformset_factory(
     Recipe,
@@ -176,3 +178,19 @@ class ManualShoppingItemForm(forms.Form):
             }
         ),
     )
+
+
+class ShoppingListForm(forms.ModelForm):
+    """Form for creating a new shopping list."""
+
+    class Meta:
+        model = ShoppingList
+        fields = ["name"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2",
+                    "placeholder": "List name",
+                }
+            )
+        }

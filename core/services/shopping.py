@@ -1,6 +1,8 @@
 import re
 from collections import Counter
 
+from django.utils import timezone
+
 from core.models import ShoppingList, ShoppingListItem, Store
 
 
@@ -117,6 +119,10 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
                 created_by=created_by,
                 is_active=True,
             )
+
+    # Update the generated_at timestamp
+    shopping_list.generated_at = timezone.now()
+    shopping_list.save(update_fields=["generated_at"])
 
     # Collect all recipe ingredients from planned meals
     # {ingredient_id: {'ingredient': obj, 'quantities': [], 'is_pantry': bool}}

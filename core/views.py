@@ -6,7 +6,7 @@ from django.db.models import Count, Max, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
-from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm
+from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm, ShoppingListForm
 from .models import Ingredient, MealType, PlannedMeal, Recipe, RecipeIngredient, ShoppingCategory, ShoppingList, WeekPlan
 from .services.shuffle import shuffle_meals
 
@@ -429,6 +429,21 @@ def plan_detail(request, pk):
 
 
 @login_required
+def plan_delete(request, pk):
+    """Delete a week plan with confirmation."""
+    plan = get_object_or_404(WeekPlan, pk=pk)
+
+    if request.method == "POST":
+        start_date = plan.start_date
+        plan.delete()
+        messages.success(request, f"Week plan for {start_date.strftime('%d %b %Y')} deleted.")
+        return redirect("plan_list")
+
+    context = {"plan": plan}
+    return render(request, "core/plan_delete.html", context)
+
+
+@login_required
 def plan_shuffle(request, pk):
     """HTMX endpoint to shuffle all meals for a week plan."""
     plan = get_object_or_404(WeekPlan, pk=pk)
@@ -596,32 +611,128 @@ def plan_clear_supplementary(request, pk, day):
 
 
 @login_required
+def shopping_list_create(request):
+    """Create a new ad-hoc shopping list."""
+    from .models import ShoppingList, Store
+    from django.http import HttpResponse
+
+    if request.method == "POST":
+        form = ShoppingListForm(request.POST)
+        if form.is_valid():
+            shopping_list_obj = form.save(commit=False)
+            shopping_list_obj.created_by = request.user
+            shopping_list_obj.save()
+            messages.success(request, f'Shopping list "{shopping_list_obj.name}" created.')
+
+            # For HTMX requests, return a redirect response
+            if request.headers.get("HX-Request"):
+                response = HttpResponse(status=204)
+                response["HX-Redirect"] = f"/shopping/{shopping_list_obj.pk}/"
+                return response
+
+            return redirect("shopping_list", pk=shopping_list_obj.pk)
+    else:
+        form = ShoppingListForm()
+
+    # Render modal for HTMX requests
+    if request.headers.get("HX-Request"):
+        return render(request, "core/shopping_list_create.html", {"form": form})
+
+    # Fallback to full page
+    stores = Store.objects.all()
+    return render(
+        request, "core/shopping_list_create.html", {"form": form, "stores": stores}
+    )
+
+
+@login_required
+def shopping_list_delete(request, pk):
+    """Delete a shopping list with appropriate warnings."""
+    from .models import ShoppingList, Store
+
+    shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+
+    if request.method == "POST":
+        # Check if this is the active list
+        is_active = shopping_list_obj.is_active
+        week_plan = shopping_list_obj.week_plan
+        name = shopping_list_obj.name
+
+        # Perform the deletion
+        shopping_list_obj.delete()
+        messages.success(request, f'Shopping list "{name}" deleted.')
+
+        # Redirect to most recent other list
+        next_list = ShoppingList.objects.first()
+        if next_list:
+            return redirect("shopping_list", pk=next_list.pk)
+        else:
+            return redirect("shopping_list_current")
+
+    # GET request - show confirmation modal with appropriate warning
+    if request.headers.get("HX-Request"):
+        return render(
+            request,
+            "core/shopping_list_delete.html",
+            {"shopping_list": shopping_list_obj},
+        )
+
+    # Fallback to full page
+    stores = Store.objects.all()
+    return render(
+        request,
+        "core/shopping_list_delete.html",
+        {"shopping_list": shopping_list_obj, "stores": stores},
+    )
+
+
+@login_required
 def shopping_list(request, pk=None):
     """View the current active shopping list or a specific one."""
     from .models import ShoppingList, Store
     from .services.shopping import get_sorted_items
 
+    # Support query parameter for selecting list
+    list_pk = request.GET.get("list")
+
     if pk:
         shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    elif list_pk:
+        shopping_list_obj = get_object_or_404(ShoppingList, pk=list_pk)
     else:
-        # Get most recent active shopping list
-        shopping_list_obj = ShoppingList.objects.filter(is_active=True).first()
+        # Get the best default shopping list, in priority order:
+        # 1. The active list
+        # 2. The most recent list linked to a meal plan
+        # 3. The most recent list (any)
+        shopping_list_obj = (
+            ShoppingList.objects.filter(is_active=True).first()
+            or ShoppingList.objects.filter(week_plan__isnull=False).first()
+            or ShoppingList.objects.first()
+        )
         if not shopping_list_obj:
-            # No active shopping list - show empty state
+            # No shopping list - show empty state
+            all_lists = ShoppingList.objects.all()
+            stores = Store.objects.all()
             return render(
-                request, "core/shopping_list.html", {"shopping_list": None, "stores": Store.objects.all()}
+                request, "core/shopping_list.html", {"shopping_list": None, "stores": stores, "all_lists": all_lists}
             )
 
     # Get items grouped by category
     grouped_items = get_sorted_items(shopping_list_obj)
     stores = Store.objects.all()
     categories = ShoppingCategory.objects.all()
+    all_lists = ShoppingList.objects.all()
+
+    # Check if list is stale (meal plan was modified after list was generated)
+    is_stale = shopping_list_obj.is_stale
 
     context = {
         "shopping_list": shopping_list_obj,
         "grouped_items": grouped_items,
         "stores": stores,
         "categories": categories,
+        "all_lists": all_lists,
+        "is_stale": is_stale,
     }
 
     # For HTMX polling, return just the items partial

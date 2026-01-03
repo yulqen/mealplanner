@@ -34,6 +34,7 @@ urlpatterns = [
     path("plans/", views.plan_list, name="plan_list"),
     path("plans/new/", views.plan_create, name="plan_create"),
     path("plans/<int:pk>/", views.plan_detail, name="plan_detail"),
+    path("plans/<int:pk>/delete/", views.plan_delete, name="plan_delete"),
     path("plans/<int:pk>/shuffle/", views.plan_shuffle, name="plan_shuffle"),
     path("plans/<int:pk>/assign/<int:day>/", views.plan_assign, name="plan_assign"),
     path(
@@ -51,7 +52,11 @@ urlpatterns = [
     ),
     # Shopping Lists
     path("shopping/", views.shopping_list, name="shopping_list_current"),
+    path("shopping/new/", views.shopping_list_create, name="shopping_list_create"),
     path("shopping/<int:pk>/", views.shopping_list, name="shopping_list"),
+    path(
+        "shopping/<int:pk>/delete/", views.shopping_list_delete, name="shopping_list_delete"
+    ),
     path(
         "shopping/generate/<int:plan_pk>/",
         views.shopping_generate,

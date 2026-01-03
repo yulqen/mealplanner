@@ -166,6 +166,7 @@ class WeekPlan(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True, help_text="When the plan was last modified")
 
     class Meta:
         ordering = ["-start_date"]
@@ -237,6 +238,11 @@ class ShoppingList(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this list was last generated from a meal plan",
+    )
     is_active = models.BooleanField(
         default=True, help_text="The current shopping list in use"
     )
@@ -259,6 +265,13 @@ class ShoppingList(models.Model):
     def checked_count(self):
         """Return count of checked items."""
         return self.items.filter(is_checked=True).count()
+
+    @property
+    def is_stale(self):
+        """Check if the shopping list is stale (meal plan was modified after list was generated)."""
+        if not self.week_plan or not self.generated_at:
+            return False
+        return self.week_plan.modified_at > self.generated_at
 
 
 class ShoppingListItem(models.Model):
