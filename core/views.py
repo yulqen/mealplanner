@@ -646,12 +646,18 @@ def shopping_generate(request, plan_pk):
         if store_id:
             store = get_object_or_404(Store, pk=store_id)
 
-        # Deactivate any existing active shopping lists
-        ShoppingList.objects.filter(is_active=True).update(is_active=False)
+        # Check if there's an existing shopping list for this week plan
+        existing_list = ShoppingList.objects.filter(week_plan=plan).first()
+        if existing_list:
+            shopping_list_obj = existing_list
+        else:
+            # Deactivate any existing active shopping lists before creating new one
+            ShoppingList.objects.filter(is_active=True).update(is_active=False)
+            shopping_list_obj = None
 
-        # Generate the new list
+        # Generate the list (will create or add to existing)
         shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=store, created_by=request.user
+            week_plan=plan, store=store, created_by=request.user, shopping_list=shopping_list_obj
         )
 
         messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
@@ -661,9 +667,15 @@ def shopping_generate(request, plan_pk):
     stores = Store.objects.all()
     if stores.count() <= 1:
         # Just generate with default store
-        ShoppingList.objects.filter(is_active=True).update(is_active=False)
+        existing_list = ShoppingList.objects.filter(week_plan=plan).first()
+        if existing_list:
+            shopping_list_obj = existing_list
+        else:
+            ShoppingList.objects.filter(is_active=True).update(is_active=False)
+            shopping_list_obj = None
+
         shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=stores.first(), created_by=request.user
+            week_plan=plan, store=stores.first(), created_by=request.user, shopping_list=shopping_list_obj
         )
         messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
         return redirect("shopping_list", pk=shopping_list_obj.pk)

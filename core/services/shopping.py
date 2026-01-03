@@ -76,26 +76,47 @@ def aggregate_quantities(quantities):
     return ", ".join(results)
 
 
-def generate_shopping_list(week_plan, store=None, created_by=None):
+def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list=None):
     """
     Generate a shopping list from a week plan.
 
     Aggregates ingredients across all recipes, respects pantry staples,
     and orders by store-specific category order.
 
+    If a shopping_list is provided, adds to it (augmenting quantities for existing items).
+    Otherwise, creates a new shopping list or uses an existing one for this week plan.
+
     Args:
         week_plan: WeekPlan instance
         store: Store instance (uses default if None)
         created_by: User instance
+        shopping_list: Optional ShoppingList instance to add to
 
     Returns:
         ShoppingList instance with items
     """
+    from django.db.models import Q
+
     # Get store (use default if not specified)
     if store is None:
         store = Store.objects.filter(is_default=True).first()
         if store is None:
             store = Store.objects.first()
+
+    # If no shopping list provided, try to find existing one for this week plan
+    if shopping_list is None:
+        existing_list = ShoppingList.objects.filter(week_plan=week_plan).first()
+        if existing_list:
+            shopping_list = existing_list
+        else:
+            # Create new shopping list
+            shopping_list = ShoppingList.objects.create(
+                name=f"Shopping for {week_plan}",
+                week_plan=week_plan,
+                store=store,
+                created_by=created_by,
+                is_active=True,
+            )
 
     # Collect all recipe ingredients from planned meals
     # {ingredient_id: {'ingredient': obj, 'quantities': [], 'is_pantry': bool}}
@@ -118,22 +139,17 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
                 }
             ingredient_quantities[ing.id]["quantities"].append(ri.quantity)
 
-    # Create shopping list
-    shopping_list = ShoppingList.objects.create(
-        name=f"Shopping for {week_plan}",
-        week_plan=week_plan,
-        store=store,
-        created_by=created_by,
-        is_active=True,
-    )
-
-    # Get store category ordering
-    category_order = {
-        sco.category_id: sco.sort_order for sco in store.category_orders.all()
+    # Get existing items on the shopping list (indexed by ingredient_id)
+    existing_items = {
+        item.ingredient_id: item
+        for item in shopping_list.items.filter(ingredient__isnull=False).select_related("ingredient")
+        if item.ingredient_id
     }
 
-    # Create items
-    items = []
+    # Create or update items
+    items_to_create = []
+    items_to_update = []
+
     for data in ingredient_quantities.values():
         ing = data["ingredient"]
         quantities = data["quantities"]
@@ -142,18 +158,35 @@ def generate_shopping_list(week_plan, store=None, created_by=None):
         # Aggregate quantities intelligently
         aggregated = aggregate_quantities(quantities)
 
-        item = ShoppingListItem(
-            shopping_list=shopping_list,
-            ingredient=ing,
-            name=ing.name,
-            category=ing.category,
-            quantities=aggregated,
-            is_pantry_item=is_pantry,
-        )
-        items.append(item)
+        # Check if item already exists on the list
+        existing_item = existing_items.get(ing.id)
 
-    # Bulk create
-    ShoppingListItem.objects.bulk_create(items)
+        if existing_item:
+            # Augment existing item's quantity
+            existing_quantities = existing_item.quantities
+            augmented = aggregate_quantities([existing_quantities, aggregated])
+            existing_item.quantities = augmented
+            # Update is_pantry_item flag if not a manual item
+            if not existing_item.is_manual and not existing_item.is_pantry_override:
+                existing_item.is_pantry_item = is_pantry
+            items_to_update.append(existing_item)
+        else:
+            # Create new item
+            item = ShoppingListItem(
+                shopping_list=shopping_list,
+                ingredient=ing,
+                name=ing.name,
+                category=ing.category,
+                quantities=aggregated,
+                is_pantry_item=is_pantry,
+            )
+            items_to_create.append(item)
+
+    # Bulk create and update
+    if items_to_create:
+        ShoppingListItem.objects.bulk_create(items_to_create)
+    if items_to_update:
+        ShoppingListItem.objects.bulk_update(items_to_update, ["quantities", "is_pantry_item"])
 
     return shopping_list
 
