@@ -105,9 +105,25 @@ def recipe_detail(request, pk):
         recipe.instructions, extensions=["nl2br", "fenced_code"]
     )
 
+    # Get the referring page for back button
+    referer = request.META.get("HTTP_REFERER", "")
+    back_url = None
+    if referer:
+        from django.http import HttpRequest
+        from urllib.parse import urlparse
+        from django.conf import settings
+
+        parsed = urlparse(referer)
+        if parsed.netloc == request.META.get("HTTP_HOST", "") or not parsed.netloc:
+            path = parsed.path
+            if path and path != request.path:
+                back_url = path
+
     context = {
         "recipe": recipe,
         "instructions_html": instructions_html,
+        "back_url": back_url,
+        "recipe_list_url": "/recipes/",
     }
     return render(request, "core/recipe_detail.html", context)
 
