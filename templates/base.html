@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen pb-16 sm:pb-0" x-data="{ mobileMenuOpen: false }">
@@ -18,7 +20,7 @@
                 <!-- Logo -->
                 <div class="flex items-center">
                     <a href="{% url 'home' %}" class="flex items-center text-lg sm:text-xl font-semibold text-gray-900">
-                        <span class="text-xl sm:text-2xl mr-1.5 sm:mr-2">🍽️</span>
+                        <img src="{% static 'img/logo.png' %}" alt="Meal Planner Logo" class="h-8 w-8 mr-2">
                         <span>Meal Planner</span>
                     </a>
                 </div>
