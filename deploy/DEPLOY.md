@@ -32,6 +32,17 @@ source ~/.bashrc
 sudo -u www-data bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 ```
 
+## Step 2.5: Install Tailwind CSS CLI
+
+The application uses a local Tailwind build. You must install the standalone CLI binary:
+
+```bash
+cd /var/www/mealplanner
+sudo curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-64
+sudo chmod +x tailwindcss-linux-64
+sudo mv tailwindcss-linux-64 tailwindcss
+```
+
 ## Step 3: Create Directory Structure
 
 ```bash
@@ -199,6 +210,9 @@ cd /var/www/mealplanner
 
 # Pull latest code
 sudo -u www-data git pull
+
+# Build CSS
+sudo -u www-data make css
 
 # Update dependencies
 sudo -u www-data /var/www/.local/bin/uv sync

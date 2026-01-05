@@ -42,8 +42,9 @@ uv add <package>
 # Sync dependencies
 uv sync
 
-# Tailwind CSS (using standalone binary)
-./tailwindcss -i core/static/core/css/input.css -o core/static/core/css/styles.css --watch
+# Tailwind CSS (using standalone binary via Makefile)
+make css         # Production build
+make css-watch   # Development watch mode
 
 # Collect static files for production
 uv run manage.py collectstatic
