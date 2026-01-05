@@ -86,17 +86,36 @@
                 </div>
 
                 <!-- Instructions -->
-                <div>
-                    <label for="id_instructions" class="block text-sm font-medium text-gray-700">
-                        Instructions
-                        <span class="text-gray-400 font-normal">(Markdown supported)</span>
-                    </label>
-                    <textarea name="instructions" id="id_instructions" rows="10"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono px-3 py-2"
-                              placeholder="1. First step...
+                <div x-data="{ showPreview: false }">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="id_instructions" class="block text-sm font-medium text-gray-700">
+                            Instructions
+                            <span class="text-gray-400 font-normal">(Markdown supported)</span>
+                        </label>
+                        <button type="button" 
+                                @click="showPreview = !showPreview"
+                                hx-post="{% url 'recipe_markdown_preview' %}"
+                                hx-target="#markdown-preview-content"
+                                hx-include="#id_instructions"
+                                hx-trigger="click[showPreview]"
+                                class="text-xs font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none">
+                            <span x-show="!showPreview">Show Preview</span>
+                            <span x-show="showPreview">Hide Preview</span>
+                        </button>
+                    </div>
+                    <div x-show="!showPreview">
+                        <textarea name="instructions" id="id_instructions" rows="10"
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono px-3 py-2"
+                                  placeholder="1. First step...
 2. Second step...
 3. Third step..."
-                              required>{{ form.instructions.value|default:'' }}</textarea>
+                                  required>{{ form.instructions.value|default:'' }}</textarea>
+                    </div>
+                    <div x-show="showPreview" id="markdown-preview-content" class="mt-1 min-h-[15rem]">
+                        <div class="flex items-center justify-center h-40 text-gray-400 italic bg-gray-50 rounded-md border border-gray-200">
+                            Loading preview...
+                        </div>
+                    </div>
                     {% if form.instructions.errors %}
                     <p class="mt-1 text-sm text-red-600">{{ form.instructions.errors.0 }}</p>
                     {% endif %}

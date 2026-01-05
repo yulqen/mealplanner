@@ -129,6 +129,14 @@ def recipe_detail(request, pk):
 
 
 @login_required
+def recipe_markdown_preview(request):
+    """HTMX endpoint to render markdown preview."""
+    content = request.POST.get("instructions", "")
+    html = markdown.markdown(content, extensions=["nl2br", "fenced_code"])
+    return render(request, "components/markdown_preview.html", {"html": html})
+
+
+@login_required
 def recipe_create(request):
     """Create a new recipe."""
     if request.method == "POST":

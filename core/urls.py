@@ -12,6 +12,7 @@ urlpatterns = [
     path("recipes/<int:pk>/edit/", views.recipe_edit, name="recipe_edit"),
     path("recipes/<int:pk>/delete/", views.recipe_delete, name="recipe_delete"),
     path("recipes/<int:pk>/duplicate/", views.recipe_duplicate, name="recipe_duplicate"),
+    path("recipes/preview/", views.recipe_markdown_preview, name="recipe_markdown_preview"),
     path("recipes/<int:pk>/toggle-ace/", views.recipe_toggle_ace, name="recipe_toggle_ace"),
     # Ingredients
     path("ingredients/", views.ingredient_list, name="ingredient_list"),
