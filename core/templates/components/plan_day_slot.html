@@ -33,19 +33,19 @@
         {% if day.planned_meal and day.planned_meal.recipe %}
         <a href="{% url 'recipe_detail' day.planned_meal.recipe.pk %}"
            class="block p-2 -mx-1 rounded-md hover:bg-gray-50 active:bg-gray-100">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
+            <div class="flex items-start gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 mt-0.5"
                       style="background-color: {{ day.planned_meal.recipe.meal_type.colour }}20; color: {{ day.planned_meal.recipe.meal_type.colour }};">
                     {{ day.planned_meal.recipe.meal_type.name }}
                 </span>
-                <span class="text-gray-900 font-medium text-sm truncate">{{ day.planned_meal.recipe.name }}</span>
+                <span class="text-gray-900 font-medium text-sm">{{ day.planned_meal.recipe.name }}</span>
                 {% if day.planned_meal.recipe.difficulty %}
-                <span class="text-xs text-gray-400 flex-shrink-0">
+                <span class="text-xs text-gray-400 flex-shrink-0 mt-0.5">
                     {% for i in "123" %}{% if forloop.counter <= day.planned_meal.recipe.difficulty %}●{% else %}○{% endif %}{% endfor %}
                 </span>
                 {% endif %}
                 {% if day.planned_meal.recipe.ace_tag %}
-                <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
                 {% endif %}
@@ -65,20 +65,20 @@
         {% if day.planned_meal and day.planned_meal.recipe %}
         <div class="mt-2 pl-1 border-l-2 border-gray-200 ml-1">
             {% if day.supplementary_meal and day.supplementary_meal.recipe %}
-            <div class="flex items-center justify-between">
+            <div class="flex items-start justify-between">
                 <a href="{% url 'recipe_detail' day.supplementary_meal.recipe.pk %}"
-                   class="flex items-center gap-2 text-xs text-gray-600 hover:text-indigo-600 py-1 pl-2">
+                   class="flex items-start gap-2 text-xs text-gray-600 hover:text-indigo-600 py-1 pl-2">
                     <span>{{ day.supplementary_meal.recipe.name }}</span>
                     {% if day.supplementary_meal.recipe.ace_tag %}
-                    <svg class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
                     {% endif %}
                     {% if day.supplementary_meal.for_people %}
-                    <span class="text-gray-400">for {{ day.supplementary_meal.for_people }}</span>
+                    <span class="text-gray-400 mt-0.5">for {{ day.supplementary_meal.for_people }}</span>
                     {% endif %}
                 </a>
-                <div class="flex items-center gap-2">
+                <div class="flex items-start gap-2 py-1">
                     <button type="button"
                             onclick="openRecipePicker({{ day.offset }}, true)"
                             class="text-xs text-indigo-500 hover:text-indigo-700">
