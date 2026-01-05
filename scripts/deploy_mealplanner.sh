@@ -1,5 +1,7 @@
 #!/bin/bash
 cd /var/www/mealplanner/
+# Force discard changes to styles.css if it exists and conflicts
+sudo -u www-data git checkout core/static/core/css/styles.css 2>/dev/null || true
 sudo -u www-data git pull
 sudo -u www-data make css
 sudo -u www-data /var/www/.local/bin/uv run python manage.py migrate
