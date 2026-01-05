@@ -1048,3 +1048,30 @@ def recipe_toggle_ace(request, pk):
         return render(request, "components/recipe_ace_tag_detail.html", context)
 
     return redirect("recipe_detail", pk=pk)
+
+
+@login_required
+def recipe_duplicate(request, pk):
+    """Create a duplicate of an existing recipe."""
+    source_recipe = get_object_or_404(Recipe, pk=pk)
+    
+    # Create the new recipe by copying fields
+    new_recipe = Recipe.objects.create(
+        name=f"{source_recipe.name} COPY",
+        meal_type=source_recipe.meal_type,
+        difficulty=source_recipe.difficulty,
+        instructions=source_recipe.instructions,
+        reference=source_recipe.reference,
+        ace_tag=False,  # Don't copy ace tag by default
+    )
+    
+    # Copy recipe ingredients
+    for ri in source_recipe.recipe_ingredients.all():
+        RecipeIngredient.objects.create(
+            recipe=new_recipe,
+            ingredient=ri.ingredient,
+            quantity=ri.quantity,
+        )
+    
+    messages.success(request, f"Recipe '{source_recipe.name}' duplicated as '{new_recipe.name}'.")
+    return redirect("recipe_edit", pk=new_recipe.pk)
