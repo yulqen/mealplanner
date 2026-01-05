@@ -192,6 +192,30 @@ class WeekPlanViewTests(BaseViewTestCase):
         # Check that meals were created (shuffle logic is complex, just checking existence)
         self.assertTrue(self.plan.planned_meals.exists())
 
+    def test_plan_shuffle_locked(self):
+        self.plan.is_locked = True
+        self.plan.save()
+        # Ensure no meals before shuffling
+        self.plan.planned_meals.all().delete()
+        
+        response = self.client.post(reverse("plan_shuffle", args=[self.plan.pk]))
+        self.assertEqual(response.status_code, 302)
+        # Check that NO meals were created because it's locked
+        self.assertFalse(self.plan.planned_meals.exists())
+
+    def test_plan_toggle_lock(self):
+        # Toggle lock on
+        response = self.client.post(reverse("plan_toggle_lock", args=[self.plan.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.plan.refresh_from_db()
+        self.assertTrue(self.plan.is_locked)
+
+        # Toggle lock off
+        response = self.client.post(reverse("plan_toggle_lock", args=[self.plan.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.plan.refresh_from_db()
+        self.assertFalse(self.plan.is_locked)
+
     def test_plan_assign(self):
         response = self.client.post(
             reverse("plan_assign", args=[self.plan.pk, 0]),

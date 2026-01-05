@@ -167,6 +167,7 @@ class WeekPlan(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, help_text="When the plan was last modified")
+    is_locked = models.BooleanField(default=False, help_text="If true, shuffling is disabled")
 
     class Meta:
         ordering = ["-start_date"]

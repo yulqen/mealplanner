@@ -465,8 +465,25 @@ def plan_shuffle(request, pk):
     plan = get_object_or_404(WeekPlan, pk=pk)
 
     if request.method == "POST":
-        shuffle_meals(plan)
-        messages.success(request, "Meals shuffled!")
+        if plan.is_locked:
+            messages.error(request, "This plan is locked and cannot be shuffled.")
+        else:
+            shuffle_meals(plan)
+            messages.success(request, "Meals shuffled!")
+
+    return redirect("plan_detail", pk=pk)
+
+
+@login_required
+def plan_toggle_lock(request, pk):
+    """View to toggle the lock status of a week plan."""
+    plan = get_object_or_404(WeekPlan, pk=pk)
+
+    if request.method == "POST":
+        plan.is_locked = not plan.is_locked
+        plan.save()
+        status = "locked" if plan.is_locked else "unlocked"
+        messages.success(request, f"Plan {status} successfully.")
 
     return redirect("plan_detail", pk=pk)
 

@@ -36,6 +36,7 @@ urlpatterns = [
     path("plans/<int:pk>/", views.plan_detail, name="plan_detail"),
     path("plans/<int:pk>/delete/", views.plan_delete, name="plan_delete"),
     path("plans/<int:pk>/shuffle/", views.plan_shuffle, name="plan_shuffle"),
+    path("plans/<int:pk>/toggle-lock/", views.plan_toggle_lock, name="plan_toggle_lock"),
     path("plans/<int:pk>/assign/<int:day>/", views.plan_assign, name="plan_assign"),
     path(
         "plans/<int:pk>/clear/<int:day>/", views.plan_clear_day, name="plan_clear_day"
