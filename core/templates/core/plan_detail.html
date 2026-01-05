@@ -17,24 +17,35 @@
                 {{ plan.start_date|date:"l j M" }} - {{ days.6.date|date:"l j M" }}
             </p>
         </div>
-        <div class="flex gap-2 sm:gap-3">
+        <div class="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:gap-3">
+            <!-- Delete -->
             <a href="{% url 'plan_delete' plan.pk %}"
-               class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                <svg class="w-4 h-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 shadow-sm">
+                <svg class="w-4 h-4 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <span class="hidden sm:inline">Delete</span>
             </a>
-            <form method="post" action="{% url 'plan_shuffle' plan.pk %}" class="flex-1 sm:flex-none">
+
+            <!-- Shuffle -->
+            <form method="post" action="{% url 'plan_shuffle' plan.pk %}" class="flex">
                 {% csrf_token %}
                 <button type="submit"
-                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <span class="mr-1">🎲</span> Shuffle
+                        class="w-full inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
+                    <svg class="w-4 h-4 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span class="hidden sm:inline">Shuffle</span>
                 </button>
             </form>
+
+            <!-- Shopping List -->
             <a href="{% url 'shopping_generate' plan.pk %}"
-               class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
-                <span class="mr-1">🛒</span> <span class="hidden sm:inline">Generate&nbsp;</span>Shopping List
+               class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <svg class="w-4 h-4 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class="hidden sm:inline">Shopping List</span>
             </a>
         </div>
     </div>
