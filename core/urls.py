@@ -53,6 +53,11 @@ urlpatterns = [
         views.plan_clear_supplementary,
         name="plan_clear_supplementary",
     ),
+    path(
+        "plans/<int:pk>/toggle-pin/<int:meal_pk>/",
+        views.plan_toggle_pin,
+        name="plan_toggle_pin",
+    ),
     # Shopping Lists
     path("shopping/", views.shopping_list, name="shopping_list_current"),
     path("shopping/new/", views.shopping_list_create, name="shopping_list_create"),

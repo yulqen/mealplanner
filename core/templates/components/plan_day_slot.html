@@ -15,6 +15,25 @@
                     {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
                 </button>
                 {% if day.planned_meal %}
+                <form method="post" action="{% url 'plan_toggle_pin' plan.pk day.planned_meal.pk %}"
+                      hx-post="{% url 'plan_toggle_pin' plan.pk day.planned_meal.pk %}"
+                      hx-target="#day-slot-{{ day.offset }}"
+                      hx-swap="innerHTML"
+                      class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="p-1 rounded hover:bg-gray-200 transition-colors"
+                            title="{% if day.planned_meal.is_pinned %}Unpin this meal (it will be replaced on shuffle){% else %}Pin this meal (it won't be replaced on shuffle){% endif %}">
+                        {% if day.planned_meal.is_pinned %}
+                        <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+                        </svg>
+                        {% endif %}
+                    </button>
+                </form>
                 <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
                       hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
                       hx-target="#day-slot-{{ day.offset }}"
@@ -155,6 +174,25 @@
                     {% if day.planned_meal and day.planned_meal.recipe %}Change{% else %}Assign{% endif %}
                 </button>
                 {% if day.planned_meal %}
+                <form method="post" action="{% url 'plan_toggle_pin' plan.pk day.planned_meal.pk %}"
+                      hx-post="{% url 'plan_toggle_pin' plan.pk day.planned_meal.pk %}"
+                      hx-target="#day-slot-{{ day.offset }}"
+                      hx-swap="innerHTML"
+                      class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="p-1 rounded hover:bg-gray-200 transition-colors"
+                            title="{% if day.planned_meal.is_pinned %}Unpin this meal (it will be replaced on shuffle){% else %}Pin this meal (it won't be replaced on shuffle){% endif %}">
+                        {% if day.planned_meal.is_pinned %}
+                        <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"/>
+                        </svg>
+                        {% endif %}
+                    </button>
+                </form>
                 <form method="post" action="{% url 'plan_clear_day' plan.pk day.offset %}" class="inline"
                       hx-post="{% url 'plan_clear_day' plan.pk day.offset %}"
                       hx-target="#day-slot-{{ day.offset }}"

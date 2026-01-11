@@ -275,6 +275,43 @@ class WeekPlanViewTests(BaseViewTestCase):
             ).exists()
         )
 
+    def test_plan_toggle_pin(self):
+        """Test toggling the pin status of a planned meal."""
+        planned_meal = PlannedMeal.objects.create(
+            week_plan=self.plan, day_offset=0, recipe=self.recipe
+        )
+
+        # Pin the meal
+        response = self.client.post(
+            reverse("plan_toggle_pin", args=[self.plan.pk, planned_meal.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        planned_meal.refresh_from_db()
+        self.assertTrue(planned_meal.is_pinned)
+
+        # Unpin the meal
+        response = self.client.post(
+            reverse("plan_toggle_pin", args=[self.plan.pk, planned_meal.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        planned_meal.refresh_from_db()
+        self.assertFalse(planned_meal.is_pinned)
+
+    def test_plan_toggle_pin_with_htmx(self):
+        """Test that toggle pin returns the correct partial template for HTMX."""
+        planned_meal = PlannedMeal.objects.create(
+            week_plan=self.plan, day_offset=0, recipe=self.recipe
+        )
+
+        response = self.client.post(
+            reverse("plan_toggle_pin", args=[self.plan.pk, planned_meal.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "components/plan_day_slot.html")
+
 
 class ShoppingListViewTests(BaseViewTestCase):
     def setUp(self):

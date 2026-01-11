@@ -648,6 +648,42 @@ def plan_clear_supplementary(request, pk, day):
     return render(request, "components/plan_day_slot.html", context)
 
 
+@login_required
+def plan_toggle_pin(request, pk, meal_pk):
+    """HTMX endpoint to toggle the pin status of a planned meal."""
+    plan = get_object_or_404(WeekPlan, pk=pk)
+    planned_meal = get_object_or_404(PlannedMeal, pk=meal_pk, week_plan=plan)
+
+    if request.method == "POST":
+        planned_meal.is_pinned = not planned_meal.is_pinned
+        planned_meal.save()
+
+    # Return the updated day slot partial
+    from datetime import timedelta
+
+    day_offset = planned_meal.day_offset
+    day_date = plan.start_date + timedelta(days=day_offset)
+    planned_meal = plan.planned_meals.filter(
+        day_offset=day_offset, is_supplementary=False
+    ).first()
+    supplementary_meal = plan.planned_meals.filter(
+        day_offset=day_offset, is_supplementary=True
+    ).first()
+
+    context = {
+        "plan": plan,
+        "day": {
+            "offset": day_offset,
+            "date": day_date,
+            "day_name": day_date.strftime("%A"),
+            "planned_meal": planned_meal,
+            "supplementary_meal": supplementary_meal,
+        },
+        "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
+    }
+    return render(request, "components/plan_day_slot.html", context)
+
+
 # Shopping List Views
 
 

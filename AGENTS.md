@@ -47,6 +47,8 @@ uv run manage.py collectstatic
 
 ### General Principles
 
+Do not implement any new work or features until you have permission from me! We consider options first.
+
 Write clean, readable code. Prefer explicitness over cleverness. Follow Django conventions. When editing, match the existing style in the file.
 
 ### Python Style

@@ -205,6 +205,10 @@ class PlannedMeal(models.Model):
         blank=True,
         help_text="e.g., 'Harvey and Sophie' - who this meal is for",
     )
+    is_pinned = models.BooleanField(
+        default=False,
+        help_text="If true, this meal won't be replaced during shuffle",
+    )
 
     class Meta:
         unique_together = ["week_plan", "day_offset", "is_supplementary"]
