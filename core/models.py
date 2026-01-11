@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class MealType(models.Model):
@@ -312,3 +313,49 @@ class ShoppingListItem(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.quantities}"
+
+
+# Signals to update WeekPlan.modified_at when recipes/ingredients change
+# This ensures the stale detection on shopping lists works correctly
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=Recipe)
+def update_week_plan_on_recipe_change(sender, instance, **kwargs):
+    """Update modified_at for all week plans that use this recipe."""
+    if instance.pk:
+        week_plans = WeekPlan.objects.filter(
+            planned_meals__recipe=instance
+        ).distinct()
+        week_plans.update(modified_at=timezone.now())
+
+
+@receiver(post_delete, sender=Recipe)
+def update_week_plan_on_recipe_delete(sender, instance, **kwargs):
+    """Update modified_at for all week plans that used this recipe."""
+    week_plans = WeekPlan.objects.filter(
+        planned_meals__recipe_id=instance.pk
+    ).distinct()
+    week_plans.update(modified_at=timezone.now())
+
+
+@receiver(post_save, sender=RecipeIngredient)
+def update_week_plan_on_recipe_ingredient_change(sender, instance, **kwargs):
+    """Update modified_at for all week plans that use this recipe."""
+    if instance.recipe_id:
+        week_plans = WeekPlan.objects.filter(
+            planned_meals__recipe_id=instance.recipe_id
+        ).distinct()
+        week_plans.update(modified_at=timezone.now())
+
+
+@receiver(post_delete, sender=RecipeIngredient)
+def update_week_plan_on_recipe_ingredient_delete(sender, instance, **kwargs):
+    """Update modified_at for all week plans that use this recipe."""
+    if instance.recipe_id:
+        week_plans = WeekPlan.objects.filter(
+            planned_meals__recipe_id=instance.recipe_id
+        ).distinct()
+        week_plans.update(modified_at=timezone.now())

@@ -78,21 +78,25 @@ def aggregate_quantities(quantities):
     return ", ".join(results)
 
 
-def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list=None):
+def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list=None, replace=False):
     """
     Generate a shopping list from a week plan.
 
     Aggregates ingredients across all recipes, respects pantry staples,
     and orders by store-specific category order.
 
-    If a shopping_list is provided, adds to it (augmenting quantities for existing items).
-    Otherwise, creates a new shopping list or uses an existing one for this week plan.
+    If a shopping_list is provided and replace=False, adds to it
+    (augmenting quantities for existing items).
+
+    If a shopping_list is provided and replace=True, removes all existing
+    non-manual items before generating (full regeneration from recipes).
 
     Args:
         week_plan: WeekPlan instance
         store: Store instance (uses default if None)
         created_by: User instance
         shopping_list: Optional ShoppingList instance to add to
+        replace: If True, clear existing items before generating (default=False)
 
     Returns:
         ShoppingList instance with items
@@ -123,6 +127,10 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
     # Update the generated_at timestamp
     shopping_list.generated_at = timezone.now()
     shopping_list.save(update_fields=["generated_at"])
+
+    # If replace=True, clear all existing non-manual items for full regeneration
+    if replace:
+        shopping_list.items.filter(is_manual=False).delete()
 
     # Collect all recipe ingredients from planned meals
     # {ingredient_id: {'ingredient': obj, 'quantities': [], 'is_pantry': bool}}
@@ -168,14 +176,22 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
         existing_item = existing_items.get(ing.id)
 
         if existing_item:
-            # Augment existing item's quantity
-            existing_quantities = existing_item.quantities
-            augmented = aggregate_quantities([existing_quantities, aggregated])
-            existing_item.quantities = augmented
-            # Update is_pantry_item flag if not a manual item
-            if not existing_item.is_manual and not existing_item.is_pantry_override:
-                existing_item.is_pantry_item = is_pantry
-            items_to_update.append(existing_item)
+            if replace:
+                # Replace existing item's quantity (regeneration mode)
+                existing_item.quantities = aggregated
+                # Update is_pantry_item flag if not a manual item
+                if not existing_item.is_manual and not existing_item.is_pantry_override:
+                    existing_item.is_pantry_item = is_pantry
+                items_to_update.append(existing_item)
+            else:
+                # Augment existing item's quantity (additive mode)
+                existing_quantities = existing_item.quantities
+                augmented = aggregate_quantities([existing_quantities, aggregated])
+                existing_item.quantities = augmented
+                # Update is_pantry_item flag if not a manual item
+                if not existing_item.is_manual and not existing_item.is_pantry_override:
+                    existing_item.is_pantry_item = is_pantry
+                items_to_update.append(existing_item)
         else:
             # Create new item
             item = ShoppingListItem(

@@ -808,8 +808,9 @@ def shopping_generate(request, plan_pk):
             shopping_list_obj = None
 
         # Generate the list (will create or add to existing)
+        # Always regenerate quantities from current recipes when explicitly generating
         shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=store, created_by=request.user, shopping_list=shopping_list_obj
+            week_plan=plan, store=store, created_by=request.user, shopping_list=shopping_list_obj, replace=True
         )
 
         messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
@@ -827,7 +828,7 @@ def shopping_generate(request, plan_pk):
             shopping_list_obj = None
 
         shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=stores.first(), created_by=request.user, shopping_list=shopping_list_obj
+            week_plan=plan, store=stores.first(), created_by=request.user, shopping_list=shopping_list_obj, replace=True
         )
         messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
         return redirect("shopping_list", pk=shopping_list_obj.pk)
