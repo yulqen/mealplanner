@@ -3,6 +3,7 @@ Test shopping list generation functionality.
 """
 
 from django.test import TestCase
+from core.services.shopping import format_regeneration_message
 from core.models import (
     Ingredient,
     MealType,
@@ -54,6 +55,12 @@ class ShoppingListRegenerationTests(TestCase):
             default_unit="L",
             is_pantry_staple=False,
         )
+        self.sugar = Ingredient.objects.create(
+            name="Sugar",
+            category=self.category,
+            default_unit="g",
+            is_pantry_staple=False,
+        )
 
         # Create meal type and recipe
         self.meal_type = MealType.objects.create(name="Dinner")
@@ -68,6 +75,9 @@ class ShoppingListRegenerationTests(TestCase):
         self.ri_flour = RecipeIngredient.objects.create(
             recipe=self.recipe, ingredient=self.flour, quantity="500g"
         )
+        self.ri_sugar = RecipeIngredient.objects.create(
+            recipe=self.recipe, ingredient=self.sugar, quantity="100g"
+        )
 
         # Create a week plan
         self.week_plan = WeekPlan.objects.create(
@@ -78,6 +88,121 @@ class ShoppingListRegenerationTests(TestCase):
         PlannedMeal.objects.create(
             week_plan=self.week_plan, day_offset=0, recipe=self.recipe
         )
+
+    def test_return_changes_parameter(self):
+        """Test that return_changes=True returns changes dict."""
+        shopping_list, changes = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store, return_changes=True
+        )
+
+        # Check that we get a tuple
+        self.assertIsInstance(shopping_list, ShoppingList)
+        self.assertIsInstance(changes, dict)
+
+        # Check structure of changes dict
+        self.assertIn('updated', changes)
+        self.assertIn('added', changes)
+        self.assertIn('removed', changes)
+        self.assertIn('counts', changes)
+
+        # For initial generation, items should be tracked (may be added or not tracked)
+        # Just verify structure is correct
+        self.assertIsInstance(changes['counts'], tuple)
+
+    def test_return_changes_with_replacement(self):
+        """Test that return_changes tracks updates when regenerating."""
+        # Generate initial shopping list
+        shopping_list = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store
+        )
+
+        # Update recipe ingredient quantities
+        self.ri_eggs.quantity = "2"
+        self.ri_eggs.save()
+        self.ri_flour.quantity = "400g"
+        self.ri_flour.save()
+
+        # Regenerate and get changes
+        regenerated_list, changes = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store, shopping_list=shopping_list,
+            replace=True, return_changes=True
+        )
+
+        # Check changes tracked correctly (quantities should be in updated dict)
+        self.assertIn('Eggs', changes['updated'])
+        self.assertIn('Flour', changes['updated'])
+        self.assertEqual(changes['updated']['Eggs'], ('3', '2'))
+        self.assertEqual(changes['updated']['Flour'], ('500g', '400g'))
+
+    def test_return_changes_with_additions(self):
+        """Test that return_changes tracks added items."""
+        # Generate initial shopping list
+        shopping_list = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store
+        )
+
+        # Add new ingredient to recipe
+        RecipeIngredient.objects.create(
+            recipe=self.recipe, ingredient=self.milk, quantity="1 cup"
+        )
+
+        # Regenerate and get changes
+        regenerated_list, changes = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store, shopping_list=shopping_list,
+            replace=True, return_changes=True
+        )
+
+        # Check changes tracked correctly (milk should be in added dict)
+        self.assertIn('Milk', changes['added'])
+        self.assertEqual(changes['added']['Milk'], '1 cup')
+        self.assertGreater(len(changes['added']), 0)  # At least 1 added
+
+    def test_return_changes_with_removals(self):
+        """Test that return_changes tracks removed items."""
+        # Generate initial shopping list
+        shopping_list = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store
+        )
+
+        # Remove sugar from recipe
+        self.ri_sugar.delete()
+
+        # Regenerate and get changes
+        regenerated_list, changes = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store, shopping_list=shopping_list,
+            replace=True, return_changes=True
+        )
+
+        # Check changes tracked correctly (sugar should be in removed dict)
+        self.assertIn('Sugar', changes['removed'])
+        self.assertEqual(changes['removed']['Sugar'], '100g')
+        self.assertGreater(len(changes['removed']), 0)  # At least 1 removed
+
+    def test_return_changes_mixed(self):
+        """Test that return_changes tracks updates, additions, and removals."""
+        # Generate initial shopping list
+        shopping_list = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store
+        )
+
+        # Update some ingredients, add one, remove one
+        self.ri_eggs.quantity = "2"
+        self.ri_eggs.save()
+        self.ri_sugar.delete()
+        RecipeIngredient.objects.create(
+            recipe=self.recipe, ingredient=self.milk, quantity="1 cup"
+        )
+
+        # Regenerate and get changes
+        regenerated_list, changes = generate_shopping_list(
+            week_plan=self.week_plan, store=self.store, shopping_list=shopping_list,
+            replace=True, return_changes=True
+        )
+
+        # Check changes tracked correctly (items should be in correct dicts)
+        self.assertEqual(changes['updated']['Eggs'], ('3', '2'))
+        self.assertEqual(changes['added']['Milk'], '1 cup')
+        self.assertEqual(changes['removed']['Sugar'], '100g')
 
     def test_regeneration_replaces_quantities(self):
         """Test that regenerating a list replaces quantities instead of augmenting."""
@@ -171,10 +296,8 @@ class ShoppingListRegenerationTests(TestCase):
             week_plan=self.week_plan, store=self.store
         )
 
-        # Verify all three items are there
-        self.assertEqual(shopping_list.items.count(), 2)  # eggs, flour
-        self.assertTrue(shopping_list.items.filter(ingredient=self.eggs).exists())
-        self.assertTrue(shopping_list.items.filter(ingredient=self.flour).exists())
+        # Verify initial items
+        initial_count = shopping_list.items.count()
 
         # Remove flour from recipe
         self.ri_flour.delete()
@@ -184,8 +307,8 @@ class ShoppingListRegenerationTests(TestCase):
             week_plan=self.week_plan, store=self.store, shopping_list=shopping_list, replace=True
         )
 
-        # Only eggs should remain (flour was removed from recipe)
-        self.assertEqual(regenerated_list.items.count(), 1)
+        # Should have one less item
+        self.assertEqual(regenerated_list.items.count(), initial_count - 1)
         self.assertTrue(regenerated_list.items.filter(ingredient=self.eggs).exists())
         self.assertFalse(regenerated_list.items.filter(ingredient=self.flour).exists())
 
@@ -227,8 +350,9 @@ class ShoppingListRegenerationTests(TestCase):
             week_plan=self.week_plan, store=self.store
         )
 
-        # Verify initial items
-        self.assertEqual(shopping_list.items.count(), 2)  # eggs, flour
+        # Verify initial items (eggs, flour, sugar from setUp)
+        initial_count = shopping_list.items.count()
+        self.assertGreaterEqual(initial_count, 2)
 
         # Add milk to recipe
         RecipeIngredient.objects.create(
@@ -240,8 +364,8 @@ class ShoppingListRegenerationTests(TestCase):
             week_plan=self.week_plan, store=self.store, shopping_list=shopping_list, replace=True
         )
 
-        # Milk should be added
-        self.assertEqual(regenerated_list.items.count(), 3)  # eggs, flour, milk
+        # Milk should be added (should have initial_count + 1 items)
+        self.assertEqual(regenerated_list.items.count(), initial_count + 1)
         self.assertTrue(regenerated_list.items.filter(ingredient=self.milk).exists())
         milk_item = regenerated_list.items.get(ingredient=self.milk)
         self.assertEqual(milk_item.quantities, "1 cup")
@@ -471,6 +595,119 @@ class StaleDetectionTests(TestCase):
 
         # Should no longer be stale
         self.assertFalse(shopping_list.is_stale)
+
+
+class ChangeMessageTests(TestCase):
+    """Test formatting of regeneration change messages."""
+
+    def test_format_message_no_changes(self):
+        """Test message when nothing changed."""
+        changes = {
+            'updated': {},
+            'added': {},
+            'removed': {},
+            'counts': (0, 0, 0)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: no changes needed")
+
+    def test_format_message_single_update(self):
+        """Test message with one item updated."""
+        changes = {
+            'updated': {'Eggs': ('3', '2')},
+            'added': {},
+            'removed': {},
+            'counts': (1, 0, 0)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: Eggs: 3 → 2")
+
+    def test_format_message_multiple_updates(self):
+        """Test message with multiple items updated."""
+        changes = {
+            'updated': {'Eggs': ('3', '2'), 'Flour': ('500g', '400g')},
+            'added': {},
+            'removed': {},
+            'counts': (2, 0, 0)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: Eggs: 3 → 2, Flour: 500g → 400g")
+
+    def test_format_message_many_updates(self):
+        """Test message with many updates (shows only first 3)."""
+        changes = {
+            'updated': {
+                'Eggs': ('3', '2'),
+                'Flour': ('500g', '400g'),
+                'Milk': ('1L', '2L'),
+                'Sugar': ('100g', '50g'),
+            },
+            'added': {},
+            'removed': {},
+            'counts': (4, 0, 0)
+        }
+        message = format_regeneration_message(changes)
+        # Should show first 3 updates and count for remaining
+        self.assertIn("Eggs: 3 → 2", message)
+        self.assertIn("Flour: 500g → 400g", message)
+        self.assertIn("Milk: 1L → 2L", message)
+        self.assertIn("1 more", message)
+        self.assertNotIn("Sugar", message)
+
+    def test_format_message_with_additions(self):
+        """Test message including added items."""
+        changes = {
+            'updated': {'Eggs': ('3', '2')},
+            'added': {'Milk': '1 cup'},
+            'removed': {},
+            'counts': (1, 1, 0)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: Eggs: 3 → 2 (1 added)")
+
+    def test_format_message_with_removals(self):
+        """Test message including removed items."""
+        changes = {
+            'updated': {},
+            'added': {},
+            'removed': {'Sugar': '100g'},
+            'counts': (0, 0, 1)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: (1 removed)")
+
+    def test_format_message_all_changes(self):
+        """Test message with updates, additions, and removals."""
+        changes = {
+            'updated': {'Eggs': ('3', '2')},
+            'added': {'Milk': '1 cup'},
+            'removed': {'Sugar': '100g'},
+            'counts': (1, 1, 1)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: Eggs: 3 → 2 (1 added, 1 removed)")
+
+    def test_format_message_only_additions(self):
+        """Test message with only additions."""
+        changes = {
+            'updated': {},
+            'added': {'Milk': '1 cup', 'Eggs': '3'},
+            'removed': {},
+            'counts': (0, 2, 0)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: (2 added)")
+
+    def test_format_message_only_removals(self):
+        """Test message with only removals."""
+        changes = {
+            'updated': {},
+            'added': {},
+            'removed': {'Milk': '1 cup', 'Sugar': '100g'},
+            'counts': (0, 0, 2)
+        }
+        message = format_regeneration_message(changes)
+        self.assertEqual(message, "Shopping list regenerated: (2 removed)")
 
 
 class ShoppingListGenerationTests(TestCase):

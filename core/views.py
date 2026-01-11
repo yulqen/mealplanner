@@ -787,7 +787,7 @@ def shopping_list(request, pk=None):
 def shopping_generate(request, plan_pk):
     """Generate a shopping list from a week plan."""
     from .models import ShoppingList, Store
-    from .services.shopping import generate_shopping_list
+    from .services.shopping import generate_shopping_list, format_regeneration_message
 
     plan = get_object_or_404(WeekPlan, pk=plan_pk)
 
@@ -809,11 +809,14 @@ def shopping_generate(request, plan_pk):
 
         # Generate the list (will create or add to existing)
         # Always regenerate quantities from current recipes when explicitly generating
-        shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=store, created_by=request.user, shopping_list=shopping_list_obj, replace=True
+        shopping_list_obj, changes = generate_shopping_list(
+            week_plan=plan, store=store, created_by=request.user, shopping_list=shopping_list_obj,
+            replace=True, return_changes=True
         )
 
-        messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
+        # Show detailed message about what changed
+        message = format_regeneration_message(changes)
+        messages.success(request, message)
         return redirect("shopping_list", pk=shopping_list_obj.pk)
 
     # GET - show store selection if multiple stores exist
@@ -827,10 +830,12 @@ def shopping_generate(request, plan_pk):
             ShoppingList.objects.filter(is_active=True).update(is_active=False)
             shopping_list_obj = None
 
-        shopping_list_obj = generate_shopping_list(
-            week_plan=plan, store=stores.first(), created_by=request.user, shopping_list=shopping_list_obj, replace=True
+        shopping_list_obj, changes = generate_shopping_list(
+            week_plan=plan, store=stores.first(), created_by=request.user,
+            shopping_list=shopping_list_obj, replace=True, return_changes=True
         )
-        messages.success(request, f"Shopping list generated with {shopping_list_obj.items.count()} items.")
+        message = format_regeneration_message(changes)
+        messages.success(request, message)
         return redirect("shopping_list", pk=shopping_list_obj.pk)
 
     context = {

@@ -78,7 +78,7 @@ def aggregate_quantities(quantities):
     return ", ".join(results)
 
 
-def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list=None, replace=False):
+def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list=None, replace=False, return_changes=False):
     """
     Generate a shopping list from a week plan.
 
@@ -97,9 +97,15 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
         created_by: User instance
         shopping_list: Optional ShoppingList instance to add to
         replace: If True, clear existing items before generating (default=False)
+        return_changes: If True, return (shopping_list, changes) tuple (default=False)
 
     Returns:
-        ShoppingList instance with items
+        ShoppingList instance, or (shopping_list, changes) tuple if return_changes=True
+        where changes is a dict with:
+            'updated': {item_name: (old_qty, new_qty), ...}
+            'added': {item_name: new_qty, ...}
+            'removed': {item_name: old_qty, ...}
+            'counts': (updated_count, added_count, removed_count)
     """
     from django.db.models import Q
 
@@ -128,9 +134,37 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
     shopping_list.generated_at = timezone.now()
     shopping_list.save(update_fields=["generated_at"])
 
+    # Get existing items on the shopping list (indexed by ingredient_id)
+    existing_items = {
+        item.ingredient_id: item
+        for item in shopping_list.items.filter(ingredient__isnull=False).select_related("ingredient")
+        if item.ingredient_id
+    }
+
     # If replace=True, clear all existing non-manual items for full regeneration
+    # Track changes if requested
+    old_items = {}  # Will hold old items for tracking if replace=True and return_changes=True
+
+    if return_changes:
+        changes = {
+            'updated': {},
+            'added': {},
+            'removed': {},
+            'counts': (0, 0, 0)  # (updated, added, removed)
+        }
+
+        if replace:
+            # Capture existing non-manual items before deletion (for tracking changes)
+            old_items = {
+                ing_id: {'name': item.name, 'quantities': item.quantities}
+                for ing_id, item in existing_items.items()
+                if not item.is_manual
+            }
+
+    # Clear existing non-manual items if replacing
     if replace:
         shopping_list.items.filter(is_manual=False).delete()
+        existing_items.clear()
 
     # Collect all recipe ingredients from planned meals
     # {ingredient_id: {'ingredient': obj, 'quantities': [], 'is_pantry': bool}}
@@ -153,13 +187,6 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
                 }
             ingredient_quantities[ing.id]["quantities"].append(ri.quantity)
 
-    # Get existing items on the shopping list (indexed by ingredient_id)
-    existing_items = {
-        item.ingredient_id: item
-        for item in shopping_list.items.filter(ingredient__isnull=False).select_related("ingredient")
-        if item.ingredient_id
-    }
-
     # Create or update items
     items_to_create = []
     items_to_update = []
@@ -174,26 +201,36 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
 
         # Check if item already exists on the list
         existing_item = existing_items.get(ing.id)
+        was_in_old_list = ing.id in old_items if replace else False
 
-        if existing_item:
-            if replace:
-                # Replace existing item's quantity (regeneration mode)
-                existing_item.quantities = aggregated
-                # Update is_pantry_item flag if not a manual item
-                if not existing_item.is_manual and not existing_item.is_pantry_override:
-                    existing_item.is_pantry_item = is_pantry
-                items_to_update.append(existing_item)
-            else:
-                # Augment existing item's quantity (additive mode)
-                existing_quantities = existing_item.quantities
-                augmented = aggregate_quantities([existing_quantities, aggregated])
-                existing_item.quantities = augmented
-                # Update is_pantry_item flag if not a manual item
-                if not existing_item.is_manual and not existing_item.is_pantry_override:
-                    existing_item.is_pantry_item = is_pantry
-                items_to_update.append(existing_item)
+        if existing_item and not replace:
+            # Augment existing item's quantity (additive mode)
+            existing_quantities = existing_item.quantities
+            augmented = aggregate_quantities([existing_quantities, aggregated])
+            existing_item.quantities = augmented
+            # Update is_pantry_item flag if not a manual item
+            if not existing_item.is_manual and not existing_item.is_pantry_override:
+                existing_item.is_pantry_item = is_pantry
+            items_to_update.append(existing_item)
+        elif replace and was_in_old_list and return_changes:
+            # Item was in old list - this is a replacement
+            old_item = old_items[ing.id]
+            if old_item['quantities'] != aggregated:
+                # Quantity changed, track as updated
+                changes['updated'][ing.name] = (old_item['quantities'], aggregated)
+
+            # Create new item (existing one was deleted)
+            item = ShoppingListItem(
+                shopping_list=shopping_list,
+                ingredient=ing,
+                name=ing.name,
+                category=ing.category,
+                quantities=aggregated,
+                is_pantry_item=is_pantry,
+            )
+            items_to_create.append(item)
         else:
-            # Create new item
+            # Create new item (initial generation or truly new ingredient)
             item = ShoppingListItem(
                 shopping_list=shopping_list,
                 ingredient=ing,
@@ -204,13 +241,76 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
             )
             items_to_create.append(item)
 
+            # Track as added if tracking changes and ingredient wasn't in old list
+            if return_changes and not was_in_old_list:
+                changes['added'][ing.name] = aggregated
+
     # Bulk create and update
     if items_to_create:
         ShoppingListItem.objects.bulk_create(items_to_create)
     if items_to_update:
         ShoppingListItem.objects.bulk_update(items_to_update, ["quantities", "is_pantry_item"])
 
+    # Track removed items (were in list but not in recipes anymore)
+    if return_changes and replace:
+        # Items that were in old_items but not in ingredient_quantities
+        for ing_id, old_item in old_items.items():
+            if ing_id not in ingredient_quantities:
+                changes['removed'][old_item['name']] = old_item['quantities']
+
+        # Calculate counts
+        updated_count = len(changes['updated'])
+        added_count = len(changes['added'])
+        removed_count = len(changes['removed'])
+        changes['counts'] = (updated_count, added_count, removed_count)
+
+    # Return based on return_changes parameter
+    if return_changes:
+        return shopping_list, changes
     return shopping_list
+
+
+def format_regeneration_message(changes):
+    """
+    Format shopping list regeneration changes into a user-friendly message.
+
+    Args:
+        changes: Dict with 'updated', 'added', 'removed', 'counts'
+
+    Returns:
+        Formatted message string
+    """
+    updated, added, removed = changes['counts']
+
+    # No changes
+    if updated == 0 and added == 0 and removed == 0:
+        return "Shopping list regenerated: no changes needed"
+
+    parts = []
+
+    # Add updated items (limit to 3 to keep message readable)
+    if updated > 0:
+        updated_items = list(changes['updated'].items())[:3]
+        updated_strings = [f"{name}: {old} → {new}" for name, (old, new) in updated_items]
+
+        if len(updated_strings) > 0:
+            parts.append(", ".join(updated_strings))
+
+        # If there are more than 3 updated items, add count
+        if updated > 3:
+            parts.append(f"{updated - 3} more")
+
+    # Add summary of added/removed
+    summary_parts = []
+    if added > 0:
+        summary_parts.append(f"{added} added")
+    if removed > 0:
+        summary_parts.append(f"{removed} removed")
+
+    if summary_parts:
+        parts.append(f"({', '.join(summary_parts)})")
+
+    return "Shopping list regenerated: " + " ".join(parts)
 
 
 def get_sorted_items(shopping_list):
