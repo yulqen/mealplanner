@@ -94,3 +94,7 @@ Use Django migrations for all schema changes. Keep models in `core/models.py`. U
 ### Git
 
 Create focused commits with clear messages. Don't commit generated files or sensitive data. Reference issue numbers when relevant.
+
+### Linting with ruff
+
+Use the `ruff` tool to check for formatting, syntax and typing errors.
