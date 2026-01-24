@@ -38,7 +38,7 @@ def shuffle_meals(week_plan, num_days=7):
         return []
 
     # Track which day offsets are already filled by pinned meals
-    pinned_day_offsets = {pm.day_offset for pm in pinned_meals}
+    {pm.day_offset for pm in pinned_meals}
 
     planned_meals = []
     previous_type_id = None

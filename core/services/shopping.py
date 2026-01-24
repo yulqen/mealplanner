@@ -107,7 +107,6 @@ def generate_shopping_list(week_plan, store=None, created_by=None, shopping_list
             'removed': {item_name: old_qty, ...}
             'counts': (updated_count, added_count, removed_count)
     """
-    from django.db.models import Q
 
     # Get store (use default if not specified)
     if store is None:

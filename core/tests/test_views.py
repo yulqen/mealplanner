@@ -1,5 +1,5 @@
-from datetime import date, timedelta
-from django.test import TestCase, Client
+from datetime import date
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from core.models import (
@@ -8,7 +8,6 @@ from core.models import (
     Store,
     Ingredient,
     Recipe,
-    RecipeIngredient,
     WeekPlan,
     PlannedMeal,
     ShoppingList,

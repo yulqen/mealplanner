@@ -109,9 +109,7 @@ def recipe_detail(request, pk):
     referer = request.META.get("HTTP_REFERER", "")
     back_url = None
     if referer:
-        from django.http import HttpRequest
         from urllib.parse import urlparse
-        from django.conf import settings
 
         parsed = urlparse(referer)
         if parsed.netloc == request.META.get("HTTP_HOST", "") or not parsed.netloc:
@@ -690,7 +688,7 @@ def plan_toggle_pin(request, pk, meal_pk):
 @login_required
 def shopping_list_create(request):
     """Create a new ad-hoc shopping list."""
-    from .models import ShoppingList, Store
+    from .models import Store
     from django.http import HttpResponse
 
     if request.method == "POST":
@@ -731,8 +729,6 @@ def shopping_list_delete(request, pk):
 
     if request.method == "POST":
         # Check if this is the active list
-        is_active = shopping_list_obj.is_active
-        week_plan = shopping_list_obj.week_plan
         name = shopping_list_obj.name
 
         # Perform the deletion
@@ -885,7 +881,6 @@ def shopping_generate(request, plan_pk):
 def shopping_check(request, pk, item_pk):
     """HTMX endpoint to toggle an item's checked status."""
     from .models import ShoppingListItem
-    from .services.shopping import get_sorted_items
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
     item = get_object_or_404(ShoppingListItem, pk=item_pk, shopping_list=shopping_list_obj)
@@ -970,7 +965,6 @@ def shopping_add(request, pk):
 @login_required
 def shopping_item_autocomplete(request, pk):
     """HTMX endpoint for autocomplete when adding items to shopping list."""
-    from .models import ShoppingListItem
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
     query = request.GET.get("name", "").strip()
@@ -997,7 +991,6 @@ def shopping_item_autocomplete(request, pk):
 @login_required
 def shopping_clear(request, pk):
     """Clear all items from a shopping list (or just checked items)."""
-    from .models import ShoppingListItem
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
 

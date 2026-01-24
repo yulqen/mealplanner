@@ -321,9 +321,8 @@ class ShoppingListItem(models.Model):
 
 # Signals to update WeekPlan.modified_at when recipes/ingredients change
 # This ensures the stale detection on shopping lists works correctly
-
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete  # noqa: E402
+from django.dispatch import receiver  # noqa: E402
 
 
 @receiver(post_save, sender=Recipe)

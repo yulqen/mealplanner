@@ -1,7 +1,6 @@
 # Gunicorn configuration for Meal Planner
 # https://docs.gunicorn.org/en/stable/settings.html
 
-import multiprocessing
 
 # Bind to localhost only (nginx proxies to us)
 bind = "127.0.0.1:8070"

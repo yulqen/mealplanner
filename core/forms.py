@@ -8,7 +8,6 @@ from .models import (
     RecipeIngredient,
     ShoppingCategory,
     ShoppingList,
-    ShoppingListItem,
     WeekPlan,
 )
 
