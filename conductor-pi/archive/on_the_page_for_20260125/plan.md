@@ -1,8 +1,8 @@
 ## Phase 1: Preparation and Test Setup
 
-- [ ] Task: Analyze existing codebase for "Clear" functionality
-    - [ ] Identify the template file containing the "Clear" dropdown menu
-    - [ ] Identify the Django view and URL pattern handling the clearing actions
+- [x] Task: Analyze existing codebase for "Clear" functionality
+    - [x] Identify the template file containing the "Clear" dropdown menu
+    - [~] Identify the Django view and URL pattern handling the clearing actions
 - [ ] Task: Write failing tests for "Clear Checked" logic
     - [ ] Create a test case ensuring that a request to the clear endpoint only removes items with `is_checked=True`
     - [ ] Create a test case ensuring that items with `is_checked=False` remain in the database
