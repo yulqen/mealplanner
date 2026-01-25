@@ -2,7 +2,7 @@
 
 - [ ] The "Meal plan has been updated" message needs a button to remove it if the
     user does not wish to update the shopping list.
-- [ ] Replace the "Clear" dropdown menu on the shopping list page with a button that
+- [x] Replace the "Clear" dropdown menu on the shopping list page with a button that
     just allows "Clear checked items"
     - "Clear all items" is too dangerous and we don't need it
 - [ ] Every item on the shopping list needs a button to allow the user to move the

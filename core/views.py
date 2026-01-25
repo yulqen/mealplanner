@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Max, Prefetch
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -1130,6 +1130,15 @@ def recipe_duplicate(request, pk):
             ingredient=ri.ingredient,
             quantity=ri.quantity,
         )
-    
+
     messages.success(request, f"Recipe '{source_recipe.name}' duplicated as '{new_recipe.name}'.")
     return redirect("recipe_edit", pk=new_recipe.pk)
+
+
+@login_required
+def shopping_dismiss_notification(request, pk):
+    """HTMX endpoint to dismiss the stale shopping list notification.
+    Returns empty response so HTMX can swap-delete the notification element.
+    """
+    # Just return empty response - HTMX will remove the element
+    return HttpResponse("", status=200)
