@@ -14,3 +14,7 @@ Each track has its own spec and plan in the tracks/ directory.
   *Link: [./tracks/the_meal_plan_has_20260125/](./tracks/the_meal_plan_has_20260125/)*
   *Closed: 2026-01-25 | Reason: completed-externally*
   *Notes: "Done off the books."*
+---
+
+- [~] **Track: We need to enable the user to move an item on a shopping list to another shopping list. They should be presented with a nice UI (modal with a select field?) allowing them to select which shopping list to move it to.**
+  *Link: [./tracks/move_shopping_list_item_20260125/](./tracks/move_shopping_list_item_20260125/)*
