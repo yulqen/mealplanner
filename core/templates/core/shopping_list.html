@@ -6,7 +6,7 @@
 <div class="space-y-4 sm:space-y-6">
     <!-- Stale List Warning -->
     {% if is_stale and shopping_list.week_plan %}
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm">
+    <div id="notification-banner" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm">
         <div class="flex">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -24,16 +24,19 @@
                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
                     Regenerate List
                 </a>
-                <button type="button"
-                        hx-post="{% url 'shopping_dismiss_notification' shopping_list.pk %}"
-                        hx-target="closest div"
-                        hx-swap="outerHTML"
-                        aria-label="Dismiss notification"
-                        class="inline-flex items-center px-2 py-1.5 border border-transparent text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <form hx-post="{% url 'shopping_dismiss_notification' shopping_list.pk %}"
+                      hx-target="#notification-banner"
+                      hx-swap="outerHTML"
+                      class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            aria-label="Dismiss notification"
+                            class="inline-flex items-center px-2 py-1.5 border border-transparent text-xs font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

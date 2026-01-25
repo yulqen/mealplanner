@@ -10,5 +10,7 @@ Each track has its own spec and plan in the tracks/ directory.
   *Link: [./tracks/on_the_page_for_20260125/](./tracks/on_the_page_for_20260125/)*
 ---
 
-- [~] **Track: The "Meal plan has been updated" message needs a button to remove it if the user does not wish to update the shopping list.**
+- [x] **Track: The "Meal plan has been updated" message needs a button to remove it if the user does not wish to update the shopping list.**
   *Link: [./tracks/the_meal_plan_has_20260125/](./tracks/the_meal_plan_has_20260125/)*
+  *Closed: 2026-01-25 | Reason: completed-externally*
+  *Notes: "Done off the books."*

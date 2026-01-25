@@ -54,17 +54,17 @@
 
 ## Phase 4: Integration Testing
 
-- [ ] Task: Write integration tests for full dismiss workflow
-    - [ ] Test end-to-end dismiss flow removes notification from DOM
-    - [ ] Test that dismissing notification does not affect shopping list data
-    - [ ] Test that dismissing notification does not affect meal plan data
-    - [ ] Test notification reappears after subsequent meal plan change
+- [x] Task: Write integration tests for full dismiss workflow
+    - [x] Test end-to-end dismiss flow removes notification from DOM
+    - [x] Test that dismissing notification does not affect shopping list data
+    - [x] Test that dismissing notification does not affect meal plan data
+    - [x] Test notification reappears after subsequent meal plan change
 
-- [ ] Task: Write accessibility tests
-    - [ ] Test keyboard-only navigation to dismiss button
-    - [ ] Test screen reader announces dismiss button correctly
+- [x] Task: Write accessibility tests
+    - [x] Test keyboard-only navigation to dismiss button
+    - [x] Test screen reader announces dismiss button correctly
 
-- [ ] Task: Verify phase completion
+- [x] Task: Verify phase completion
 
 ## Phase 5: Polish & Verification
 
