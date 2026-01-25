@@ -20,9 +20,9 @@
     - [x] Create view to handle GET (render form) and POST (process move)
     - [x] Filter available lists in context to exclude current list
     - [x] Handle edge case where no other lists exist
-- [ ] Task: Configure URL routing
-    - [ ] Add URL path for the move item endpoint
-- [ ] Task: Verify phase completion
+- [x] Task: Configure URL routing
+    - [x] Add URL path for the move item endpoint
+- [x] Task: Verify phase completion
 
 ## Phase 3: Frontend Modal & Interaction
 
