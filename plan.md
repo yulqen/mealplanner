@@ -35,8 +35,8 @@
 
 ## Phase 4: Final Polish and Cleanup
 
-- [~] Task: Clean up unused code
-    - [ ] Remove any orphaned CSS, JavaScript, or template fragments related to the old dropdown
-- [ ] Task: Run full test suite
-    - [ ] Ensure no regressions were introduced in other parts of the shopping list
-- [ ] Task: Verify phase completion
+- [x] Task: Clean up unused code
+    - [x] Remove any orphaned CSS, JavaScript, or template fragments related to the old dropdown
+- [x] Task: Run full test suite
+    - [x] Ensure no regressions were introduced in other parts of the shopping list
+- [x] Task: Verify phase completion
