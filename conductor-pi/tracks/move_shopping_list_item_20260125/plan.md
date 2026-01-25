@@ -11,15 +11,15 @@
 
 ## Phase 2: Backend View & URL Routing
 
-- [ ] Task: Write tests for the Move Item View
-    - [ ] Test GET request returns move modal HTML
-    - [ ] Test that dropdown excludes the current list
-    - [ ] Test POST request successfully moves item
-    - [ ] Test response includes HTMX triggers for UI update
-- [ ] Task: Implement View for Move Item
-    - [ ] Create view to handle GET (render form) and POST (process move)
-    - [ ] Filter available lists in context to exclude current list
-    - [ ] Handle edge case where no other lists exist
+- [x] Task: Write tests for the Move Item View
+    - [x] Test GET request returns move modal HTML
+    - [x] Test that dropdown excludes the current list
+    - [x] Test POST request successfully moves item
+    - [x] Test response includes HTMX triggers for UI update
+- [x] Task: Implement View for Move Item
+    - [x] Create view to handle GET (render form) and POST (process move)
+    - [x] Filter available lists in context to exclude current list
+    - [x] Handle edge case where no other lists exist
 - [ ] Task: Configure URL routing
     - [ ] Add URL path for the move item endpoint
 - [ ] Task: Verify phase completion

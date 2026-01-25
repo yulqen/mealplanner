@@ -98,6 +98,11 @@ urlpatterns = [
         name="shopping_edit_category",
     ),
     path(
+        "shopping/<int:pk>/move-item/<int:item_pk>/",
+        views.shopping_item_move,
+        name="shopping_item_move",
+    ),
+    path(
         "shopping/<int:pk>/dismiss-notification/",
         views.shopping_dismiss_notification,
         name="shopping_dismiss_notification",

@@ -1091,6 +1091,60 @@ def shopping_edit_category(request, pk, item_pk):
 
 
 @login_required
+def shopping_item_move(request, pk, item_pk):
+    """HTMX endpoint to move a shopping list item to another list."""
+    from .models import ShoppingListItem
+
+    shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    item = get_object_or_404(ShoppingListItem, pk=item_pk, shopping_list=shopping_list_obj)
+
+    # Get available shopping lists (excluding current list)
+    available_lists = ShoppingList.objects.filter(
+        created_by=request.user
+    ).exclude(pk=shopping_list_obj.pk)
+
+    if request.method == "POST":
+        destination_list_id = request.POST.get("destination_list")
+
+        if not destination_list_id:
+            return HttpResponse("No destination list selected", status=400)
+
+        destination_list = get_object_or_404(
+            ShoppingList,
+            pk=destination_list_id,
+            created_by=request.user
+        )
+
+        # Check if destination is the current list
+        if destination_list.pk == shopping_list_obj.pk:
+            return HttpResponse("Cannot move item to the same list", status=400)
+
+        # Move the item
+        item.shopping_list = destination_list
+        item.save()
+
+        messages.success(request, f'Moved "{item.name}" to {destination_list.name}.')
+
+        # Return updated items list
+        from .services.shopping import get_sorted_items
+
+        grouped_items = get_sorted_items(shopping_list_obj)
+        context = {
+            "shopping_list": shopping_list_obj,
+            "grouped_items": grouped_items,
+        }
+        return render(request, "components/shopping_items_only.html", context)
+
+    # GET request - render the modal form
+    context = {
+        "item": item,
+        "shopping_list": shopping_list_obj,
+        "available_lists": available_lists,
+    }
+    return render(request, "components/shopping_item_move_modal.html", context)
+
+
+@login_required
 @csrf_exempt
 def recipe_toggle_ace(request, pk):
     """HTMX endpoint to toggle ace tag on a recipe."""
