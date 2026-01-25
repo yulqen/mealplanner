@@ -26,18 +26,18 @@
 
 ## Phase 3: Frontend Modal & Interaction
 
-- [ ] Task: Create Move Item Modal HTML Template
-    - [ ] Build modal structure with title "Move Item"
-    - [ ] Add form with `<select>` dropdown for destination list
-    - [ ] Include "Cancel" and "Confirm" buttons
-- [ ] Task: Integrate HTMX triggers
-    - [ ] Add "Move" button/icon trigger to the shopping list item row
-    - [ ] Configure `hx-get` to load modal content
-    - [ ] Configure `hx-post` on the form to submit the move action
-    - [ ] Configure `hx-swap` to update the UI without reload and close modal
-- [ ] Task: Handle "No Other Lists" state
-    - [ ] Implement UI check to hide/disable "Move" button if only one list exists
-    - [ ] Or display message in modal if no lists available
+- [x] Task: Create Move Item Modal HTML Template
+    - [x] Build modal structure with title "Move Item"
+    - [x] Add form with `<select>` dropdown for destination list
+    - [x] Include "Cancel" and "Confirm" buttons
+- [x] Task: Integrate HTMX triggers
+    - [x] Add "Move" button/icon trigger to the shopping list item row
+    - [x] Configure `hx-get` to load modal content
+    - [x] Configure `hx-post` on the form to submit the move action
+    - [x] Configure `hx-swap` to update the UI without reload and close modal
+- [x] Task: Handle "No Other Lists" state
+    - [x] Implement UI check to hide/disable "Move" button if only one list exists
+    - [x] Or display message in modal if no lists available
 - [ ] Task: Verify phase completion
 
 ## Phase 4: Refinement & Quality Assurance
