@@ -3,7 +3,9 @@ from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Max, Prefetch
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from .forms import IngredientForm, RecipeForm, RecipeIngredientFormSet, WeekPlanForm, ShoppingListForm
@@ -679,7 +681,13 @@ def plan_toggle_pin(request, pk, meal_pk):
         },
         "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
     }
-    return render(request, "components/plan_day_slot.html", context)
+
+    # Check if this is an HTMX request
+    if request.headers.get("HX-Request"):
+        return render(request, "components/plan_day_slot.html", context)
+    else:
+        # Fallback: redirect to plan detail page for non-HTMX requests
+        return HttpResponseRedirect(reverse("plan_detail", kwargs={"pk": plan.pk}))
 
 
 # Shopping List Views

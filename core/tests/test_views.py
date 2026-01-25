@@ -311,6 +311,20 @@ class WeekPlanViewTests(BaseViewTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "components/plan_day_slot.html")
 
+    def test_plan_toggle_pin_without_htmx_redirects(self):
+        """Test that toggle pin redirects to plan detail page for non-HTMX requests."""
+        planned_meal = PlannedMeal.objects.create(
+            week_plan=self.plan, day_offset=0, recipe=self.recipe
+        )
+
+        response = self.client.post(
+            reverse("plan_toggle_pin", args=[self.plan.pk, planned_meal.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("plan_detail", args=[self.plan.pk]))
+        planned_meal.refresh_from_db()
+        self.assertTrue(planned_meal.is_pinned)
+
 
 class ShoppingListViewTests(BaseViewTestCase):
     def setUp(self):
