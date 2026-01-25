@@ -998,20 +998,27 @@ def shopping_item_autocomplete(request, pk):
 
 @login_required
 def shopping_clear(request, pk):
-    """Clear all items from a shopping list (or just checked items)."""
+    """Clear checked items from a shopping list."""
+    from .services.shopping import get_sorted_items
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
 
     if request.method == "POST":
-        clear_type = request.POST.get("type", "checked")
-
-        if clear_type == "all":
-            shopping_list_obj.items.all().delete()
-            messages.success(request, "All items cleared.")
-        else:
-            # Clear only checked items
-            count = shopping_list_obj.items.filter(is_checked=True).delete()[0]
+        # Clear only checked items - 'all' is no longer supported
+        count = shopping_list_obj.items.filter(is_checked=True).delete()[0]
+        if count > 0:
             messages.success(request, f"{count} checked item(s) cleared.")
+        else:
+            messages.info(request, "No checked items to clear.")
+
+    # For HTMX requests, return the items partial
+    if request.headers.get("HX-Request"):
+        grouped_items = get_sorted_items(shopping_list_obj)
+        context = {
+            "shopping_list": shopping_list_obj,
+            "grouped_items": grouped_items,
+        }
+        return render(request, "components/shopping_items_only.html", context)
 
     return redirect("shopping_list", pk=pk)
 

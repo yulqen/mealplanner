@@ -11,19 +11,19 @@
 
 ## Phase 2: Backend Refinement
 
-- [~] Task: Update the backend view for clearing items
-    - [ ] Refactor the view logic to filter items by the active shopping list and `checked` status
-    - [ ] Ensure the view handles HTMX requests by returning the appropriate partial template
-- [ ] Task: Remove or disable "Clear All" backend logic
-    - [ ] Remove any specific logic or separate endpoints dedicated to "Clear All" if they are no longer used
-- [ ] Task: Run tests and verify coverage
-    - [ ] Confirm all new and existing tests pass
-    - [ ] Verify that code coverage for the modified view is ≥80%
-- [ ] Task: Verify phase completion
+- [x] Task: Update the backend view for clearing items
+    - [x] Refactor the view logic to filter items by the active shopping list and `checked` status
+    - [x] Ensure the view handles HTMX requests by returning the appropriate partial template
+- [x] Task: Remove or disable "Clear All" backend logic
+    - [x] Remove any specific logic or separate endpoints dedicated to "Clear All" if they are no longer used
+- [x] Task: Run tests and verify coverage
+    - [x] Confirm all new and existing tests pass
+    - [x] Verify that code coverage for the modified view is ≥80%
+- [x] Task: Verify phase completion
 
 ## Phase 3: Frontend Refinement
 
-- [ ] Task: Modify the Shopping List template
+- [~] Task: Modify the Shopping List template
     - [ ] Remove the current "Clear" dropdown menu component
     - [ ] Implement a single `<button>` labeled "Clear checked items"
     - [ ] Add HTMX attributes (`hx-post`, `hx-target`, `hx-swap`) to the new button for asynchronous updates

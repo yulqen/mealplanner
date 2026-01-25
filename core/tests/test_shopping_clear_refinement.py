@@ -63,3 +63,15 @@ class ShoppingClearRefinementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "components/shopping_items_only.html")
         self.assertNotEqual(response.status_code, 302)
+
+    def test_clear_no_checked_items(self):
+        """Verify that it works even if there are no checked items."""
+        # Remove the checked item from setUp
+        self.checked_item.delete()
+        
+        response = self.client.post(
+            reverse("shopping_clear", args=[self.shopping_list.pk]),
+            {"type": "checked"}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(ShoppingListItem.objects.filter(pk=self.unchecked_item.pk).exists())
