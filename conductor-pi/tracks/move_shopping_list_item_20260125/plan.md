@@ -4,9 +4,9 @@
     - [x] Test moving an item from List A to List B
     - [x] Test verifying quantity, unit, and checked status are preserved
     - [x] Test verifying source list association is removed
-- [ ] Task: Implement move logic in Shopping Item model/manager
-    - [ ] Create method to update item's list association
-    - [ ] Ensure all attributes are preserved during the update
+- [x] Task: Implement move logic in Shopping Item model/manager
+    - [x] Create method to update item's list association
+    - [x] Ensure all attributes are preserved during the update
 - [ ] Task: Verify phase completion
 
 ## Phase 2: Backend View & URL Routing
