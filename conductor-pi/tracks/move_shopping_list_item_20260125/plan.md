@@ -47,10 +47,10 @@
 - [x] Task: Verify Code Coverage
     - [x] Run coverage report
     - [x] Ensure coverage is >80% for new code
-- [ ] Task: Manual Verification
+- [x] Task: Manual Verification
     - [x] Test moving item on desktop browser
-    - [~] Test moving item on mobile device (responsiveness)
-    - [ ] Verify data integrity in database after move
+    - [x] Test moving item on mobile device (responsiveness)
+    - [x] Verify data integrity in database after move
 - [x] Task: Final Code Review & Cleanup
     - [x] Remove debug code
     - [x] Verify linting and style guidelines
