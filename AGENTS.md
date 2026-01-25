@@ -1,14 +1,20 @@
-# AGENTS.md
+# CLAUDE.md
 
-This file provides guidance for agentic coding agents operating in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Family meal planning Django web application: recipes, weekly meal plans, store-specific shopping lists. Self-hosted on Debian with nginx.
+A family meal planning Django web application that manages recipes, generates weekly meal plans, and produces store-specific shopping lists. Target: self-hosted on Debian with nginx.
 
-**Tech Stack**: Django 6.x, SQLite, Django templates + HTMX, Tailwind CSS (standalone CLI), nginx + gunicorn, uv package manager.
+## Technology Stack
 
-## Build / Test Commands
+- **Backend**: Django 6.x with SQLite
+- **Frontend**: Django templates + HTMX + Tailwind CSS (standalone CLI, no Node.js)
+- **Real-time**: HTMX polling (5s interval) for shopping list sync
+- **Deployment**: nginx + gunicorn
+- **Package Manager**: uv
+
+## Common Commands
 
 ```bash
 # Development server
@@ -36,65 +42,46 @@ uv add <package>
 # Sync dependencies
 uv sync
 
-# Tailwind CSS (standalone binary)
-./tailwindcss -i core/static/core/css/input.css -o core/static/core/css/styles.css --watch
+# Tailwind CSS (using standalone binary via Makefile)
+make css         # Production build
+make css-watch   # Development watch mode
 
 # Collect static files for production
 uv run manage.py collectstatic
 ```
 
-## Code Style Guidelines
+## Architecture
 
-### General Principles
+### App Structure
 
-Do not implement any new work or features until you have permission from me! We consider options first.
+Single `core` app contains all functionality:
+- `models.py` - All models (MealType, Recipe, Ingredient, WeekPlan, ShoppingList, etc.)
+- `views/` - Split by domain: recipes.py, ingredients.py, plans.py, shopping.py, settings_views.py
+- `services/` - Business logic: shuffle.py (meal plan generation), shopping.py (list generation)
+- `templates/core/` - Full page templates
+- `templates/components/` - HTMX partials for dynamic updates
 
-Write clean, readable code. Prefer explicitness over cleverness. Follow Django conventions. When editing, match the existing style in the file.
+### Key Data Models
 
-### Python Style
+- **Recipe** → has many RecipeIngredients → references Ingredients
+- **Ingredient** → belongs to ShoppingCategory, can be pantry staple (excluded from lists)
+- **WeekPlan** → has 7 PlannedMeals (day_offset 0-6)
+- **ShoppingList** → has items, references Store for category ordering
+- **Store** → has StoreCategoryOrders defining aisle sequence per category
 
-**Formatting**: Use 4 spaces for indentation. Keep line length reasonable (120 chars max). Use blank lines to separate logical sections within functions and between class/function definitions.
+### Business Logic
 
-**Imports**: Group imports in this order: standard library, third-party, Django, local app. Sort alphabetically within groups. Use explicit relative imports for local modules.
+**Shuffle Algorithm** (`services/shuffle.py`): Assigns random recipes ensuring no consecutive days have the same MealType.
 
-```python
-from pathlib import Path
+**Shopping List Generation** (`services/shopping.py`): Aggregates ingredients from week plan recipes, excludes pantry staples, orders by store-specific category sequence.
 
-from django.contrib import admin
-from django.urls import path
+### HTMX Patterns
 
-from core import views
-```
+- Recipe list filters update without full reload
+- Week plan shuffle/assign use HTMX swaps
+- Shopping list checkbox toggles use HTMX with polling for multi-device sync
+- Ingredient autocomplete with inline creation during recipe editing
 
-**Naming**: Use `PascalCase` for classes, `snake_case` for functions/variables, `SCREAMING_SNAKE_CASE` for constants. Use descriptive names: `get_or_create` not `goc`, `weekly_shopping_list` not `wsl`.
+## Implementation Phases
 
-**Types**: Use type hints for function signatures. Prefer explicit types over `Any`. Use `Optional[X]` instead of `X | None`.
-
-```python
-def get_recipe_ingredients(recipe: Recipe) -> list[RecipeIngredient]:
-    ...
-```
-
-**Error Handling**: Let exceptions propagate for unexpected errors. Use Django's `get_object_or_404` for view logic. Validate form data with Django forms. Log errors using Python's `logging` module.
-
-**Django Patterns**: Put business logic in `services/` directory. Split views by domain (`views/recipes.py`, `views/shopping.py`, etc.). Use HTMX for dynamic updates with polling for sync. Keep templates in `templates/core/` for full pages, `templates/components/` for partials.
-
-### HTML/Templates
-
-Use Django template syntax. Keep templates simple—complex logic belongs in views or template tags. Include CSRF tokens for HTMX forms. Use Tailwind classes for styling.
-
-### Database
-
-Use Django migrations for all schema changes. Keep models in `core/models.py`. Use descriptive related_name values. Add `__str__` methods to all models.
-
-## Testing
-
-**Important**: This codebase currently has very few tests. ALL new code must be accompanied by new, passing tests. When adding features, fixing bugs, or refactoring, write tests that cover the changes. Run tests with `uv run manage.py test` before submitting changes.
-
-### Git
-
-Create focused commits with clear messages. Don't commit generated files or sensitive data. Reference issue numbers when relevant.
-
-### Linting with ruff
-
-Use the `ruff` tool to check for formatting, syntax and typing errors.
+The spec defines 5 phases: Foundation (recipes + auth) → Ingredients → Meal Planning → Shopping Lists → Polish. Reference `mealplanner-spec.md` for detailed requirements.
