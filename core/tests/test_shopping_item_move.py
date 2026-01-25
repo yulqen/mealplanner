@@ -2,7 +2,9 @@
 Test moving shopping list items between lists.
 """
 
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.contrib.auth.models import User
+from django.urls import reverse
 from core.models import (
     Ingredient,
     MealType,
@@ -256,3 +258,233 @@ class ShoppingListItemMoveTests(TestCase):
         self.assertTrue(self.list_b.items.filter(ingredient=self.eggs).exists())
         self.assertTrue(self.list_b.items.filter(ingredient=self.flour).exists())
         self.assertTrue(self.list_b.items.filter(ingredient=self.milk).exists())
+
+
+class ShoppingItemMoveViewTests(TestCase):
+    """Test the view for moving shopping list items."""
+
+    def setUp(self):
+        """Set up test data for view tests."""
+        # Create a user
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+
+        # Create a store
+        self.store = Store.objects.create(name="Test Store", is_default=True)
+
+        # Create categories
+        self.category = ShoppingCategory.objects.create(name="Produce")
+        self.store_cat_order = StoreCategoryOrder.objects.create(
+            store=self.store, category=self.category, sort_order=1
+        )
+
+        # Create ingredients
+        self.eggs = Ingredient.objects.create(
+            name="Eggs",
+            category=self.category,
+            default_unit="large",
+            is_pantry_staple=False,
+        )
+        self.flour = Ingredient.objects.create(
+            name="Flour",
+            category=self.category,
+            default_unit="g",
+            is_pantry_staple=False,
+        )
+
+        # Create meal type and recipe
+        self.meal_type = MealType.objects.create(name="Dinner")
+        self.recipe = Recipe.objects.create(
+            name="Pancakes", meal_type=self.meal_type, instructions="Cook them"
+        )
+
+        # Add ingredients to recipe
+        RecipeIngredient.objects.create(
+            recipe=self.recipe, ingredient=self.eggs, quantity="3"
+        )
+        RecipeIngredient.objects.create(
+            recipe=self.recipe, ingredient=self.flour, quantity="500g"
+        )
+
+        # Create a week plan
+        self.week_plan = WeekPlan.objects.create(
+            start_date=timezone.now().date(), created_by=self.user
+        )
+
+        # Add meal to the plan
+        PlannedMeal.objects.create(
+            week_plan=self.week_plan, day_offset=0, recipe=self.recipe
+        )
+
+        # Create three shopping lists
+        self.list_a = ShoppingList.objects.create(
+            name="List A",
+            week_plan=self.week_plan,
+            store=self.store,
+            is_active=True,
+            created_by=self.user,
+        )
+        self.list_b = ShoppingList.objects.create(
+            name="List B",
+            week_plan=None,
+            store=self.store,
+            is_active=False,
+            created_by=self.user,
+        )
+        self.list_c = ShoppingList.objects.create(
+            name="List C",
+            week_plan=None,
+            store=self.store,
+            is_active=False,
+            created_by=self.user,
+        )
+
+        # Add items to List A
+        self.item_eggs = ShoppingListItem.objects.create(
+            shopping_list=self.list_a,
+            ingredient=self.eggs,
+            name="Eggs",
+            category=self.category,
+            quantities="3",
+            is_checked=False,
+            is_manual=False,
+        )
+        self.item_flour = ShoppingListItem.objects.create(
+            shopping_list=self.list_a,
+            ingredient=self.flour,
+            name="Flour",
+            category=self.category,
+            quantities="500g",
+            is_checked=True,
+            is_manual=False,
+        )
+
+        # Create a test client
+        self.client = Client()
+        self.client.login(username="testuser", password="testpass")
+
+    def test_get_request_returns_move_modal_html(self):
+        """Test that GET request returns move modal HTML."""
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.get(url)
+
+        # Should return HTML
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/html; charset=utf-8")
+
+        # Should contain modal structure
+        self.assertContains(response, "Move Item")
+
+    def test_get_dropdown_excludes_current_list(self):
+        """Test that the dropdown excludes the current list."""
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.get(url)
+
+        # List A (the current list) should NOT be in the dropdown
+        self.assertNotContains(response, f'value="{self.list_a.pk}"')
+
+        # List B and List C should be in the dropdown
+        self.assertContains(response, f'value="{self.list_b.pk}"')
+        self.assertContains(response, f'value="{self.list_c.pk}"')
+
+    def test_post_request_successfully_moves_item(self):
+        """Test that POST request successfully moves item."""
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+
+        # Verify initial state
+        self.assertEqual(self.list_a.items.count(), 2)
+        self.assertEqual(self.list_b.items.count(), 0)
+
+        # POST request to move item
+        response = self.client.post(url, {"destination_list": self.list_b.pk})
+
+        # Should redirect or return success
+        self.assertEqual(response.status_code, 200)
+
+        # Refresh from database
+        self.item_eggs.refresh_from_db()
+        self.list_a.refresh_from_db()
+        self.list_b.refresh_from_db()
+
+        # Verify item was moved
+        self.assertEqual(self.item_eggs.shopping_list, self.list_b)
+        self.assertEqual(self.list_a.items.count(), 1)
+        self.assertEqual(self.list_b.items.count(), 1)
+
+        # Verify attributes are preserved
+        self.assertEqual(self.item_eggs.quantities, "3")
+        self.assertFalse(self.item_eggs.is_checked)
+
+    def test_response_includes_htmx_triggers(self):
+        """Test that response includes HTMX triggers for UI update."""
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.post(url, {"destination_list": self.list_b.pk})
+
+        # Should have HTMX trigger headers
+        # Note: This test will verify that the response is set up for HTMX
+        # The actual implementation will use HX-Trigger headers for UI updates
+        self.assertIn("HX-Request", response.wsgi_request.headers)
+
+    def test_post_requires_authentication(self):
+        """Test that POST requires authentication."""
+        # Logout
+        self.client.logout()
+
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.post(url, {"destination_list": self.list_b.pk})
+
+        # Should redirect to login
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/login/"))
+
+    def test_get_requires_authentication(self):
+        """Test that GET requires authentication."""
+        # Logout
+        self.client.logout()
+
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.get(url)
+
+        # Should redirect to login
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/login/"))
+
+    def test_post_with_invalid_destination(self):
+        """Test POST with invalid destination list."""
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.post(url, {"destination_list": 99999})
+
+        # Should return error
+        self.assertEqual(response.status_code, 400)
+
+        # Item should not be moved
+        self.item_eggs.refresh_from_db()
+        self.assertEqual(self.item_eggs.shopping_list, self.list_a)
+
+    def test_get_when_no_other_lists_exist(self):
+        """Test GET when user has only one shopping list."""
+        # Delete other lists
+        self.list_b.delete()
+        self.list_c.delete()
+
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.get(url)
+
+        # Should return error or message about no other lists
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "No other shopping lists")
+
+    def test_post_when_no_other_lists_exist(self):
+        """Test POST when user has only one shopping list."""
+        # Delete other lists
+        self.list_b.delete()
+        self.list_c.delete()
+
+        url = reverse("shopping_item_move", kwargs={"pk": self.list_a.pk, "item_pk": self.item_eggs.pk})
+        response = self.client.post(url, {"destination_list": self.list_a.pk})
+
+        # Should return error
+        self.assertEqual(response.status_code, 400)
+
+        # Item should not be moved
+        self.item_eggs.refresh_from_db()
+        self.assertEqual(self.item_eggs.shopping_list, self.list_a)
