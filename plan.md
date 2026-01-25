@@ -23,19 +23,19 @@
 
 ## Phase 3: Frontend Refinement
 
-- [~] Task: Modify the Shopping List template
-    - [ ] Remove the current "Clear" dropdown menu component
-    - [ ] Implement a single `<button>` labeled "Clear checked items"
-    - [ ] Add HTMX attributes (`hx-post`, `hx-target`, `hx-swap`) to the new button for asynchronous updates
-- [ ] Task: Manual Verification of UI/UX
-    - [ ] Verify the button is clearly visible and styled appropriately
-    - [ ] Confirm that clicking the button removes only checked items without a full page reload
-    - [ ] Confirm that the "Clear all items" option is completely removed from the UI
-- [ ] Task: Verify phase completion
+- [x] Task: Modify the Shopping List template
+    - [x] Remove the current "Clear" dropdown menu component
+    - [x] Implement a single `<button>` labeled "Clear checked items"
+    - [x] Add HTMX attributes (`hx-post`, `hx-target`, `hx-swap`) to the new button for asynchronous updates
+- [x] Task: Manual Verification of UI/UX
+    - [x] Verify the button is clearly visible and styled appropriately
+    - [x] Confirm that clicking the button removes only checked items without a full page reload
+    - [x] Confirm that the "Clear all items" option is completely removed from the UI
+- [x] Task: Verify phase completion
 
 ## Phase 4: Final Polish and Cleanup
 
-- [ ] Task: Clean up unused code
+- [~] Task: Clean up unused code
     - [ ] Remove any orphaned CSS, JavaScript, or template fragments related to the old dropdown
 - [ ] Task: Run full test suite
     - [ ] Ensure no regressions were introduced in other parts of the shopping list
