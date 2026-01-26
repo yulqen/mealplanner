@@ -1,11 +1,11 @@
 # Shopping List UI
 
-- [ ] The "Meal plan has been updated" message needs a button to remove it if the
+- [x] The "Meal plan has been updated" message needs a button to remove it if the
     user does not wish to update the shopping list.
 - [x] Replace the "Clear" dropdown menu on the shopping list page with a button that
     just allows "Clear checked items"
     - "Clear all items" is too dangerous and we don't need it
-- [ ] Every item on the shopping list needs a button to allow the user to move the
+- [x] Every item on the shopping list needs a button to allow the user to move the
     item to another list
     - They should be given the choice which list to move to
     - The button to trigger this should be similar to the move and star icons on

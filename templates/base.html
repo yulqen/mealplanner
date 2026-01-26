@@ -108,18 +108,48 @@
         {% endif %}
     </nav>
 
+    <div
+        x-data="toastManager()"
+        x-init="init()"
+        class="fixed z-50 inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center space-y-2 px-4 sm:inset-auto sm:top-4 sm:right-4 sm:translate-y-0 sm:items-end"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        <template x-for="toast in toasts" :key="toast.id">
+            <div
+                x-show="toast.visible"
+                x-transition:enter="transform transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-2 sm:translate-x-2"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:translate-x-0"
+                x-transition:leave="transform transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:translate-x-0"
+                x-transition:leave-end="opacity-0 translate-y-2 sm:translate-x-2"
+                class="pointer-events-auto w-full sm:w-auto max-w-sm rounded-lg border px-4 py-3 shadow-lg flex items-start gap-3 text-sm"
+                :class="toastClasses(toast.type)"
+                role="status"
+                x-cloak
+            >
+                <div class="mt-0.5">
+                    <svg x-show="toast.type === 'success'" x-cloak class="w-5 h-5" :class="iconClasses(toast.type)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" />
+                    </svg>
+                    <svg x-show="toast.type === 'error'" x-cloak class="w-5 h-5" :class="iconClasses(toast.type)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <svg x-show="toast.type === 'warning'" x-cloak class="w-5 h-5" :class="iconClasses(toast.type)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.01 13.86A1 1 0 0 0 3.12 19h17.76a1 1 0 0 0 .84-1.52L13.71 3.86a1 1 0 0 0-1.72 0z" />
+                    </svg>
+                    <svg x-show="toast.type === 'info'" x-cloak class="w-5 h-5" :class="iconClasses(toast.type)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9h.01M11 12h2v5m-1 4a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" />
+                    </svg>
+                </div>
+                <div class="font-medium leading-5" x-text="toast.message"></div>
+            </div>
+        </template>
+    </div>
+
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-        {% if messages %}
-        <div class="mb-4 space-y-2">
-            {% for message in messages %}
-            <div class="p-3 sm:p-4 rounded-md text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-green-50 text-green-800{% endif %}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
         {% block content %}{% endblock %}
     </main>
 
@@ -159,6 +189,126 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+
+    <script>
+        function toastManager() {
+            return {
+                toasts: [],
+                nextId: 0,
+                recentToasts: {},
+                init() {
+                    this.bindHtmx();
+                    this.seedToasts();
+                },
+                bindHtmx() {
+                    if (!window.htmx) return;
+                    document.body.addEventListener("htmx:afterRequest", (event) => {
+                        const xhr = event.detail.xhr;
+                        const header = xhr.getResponseHeader("HX-Trigger");
+                        if (!header) return;
+                        if (xhr.__toastHandled) return;
+                        xhr.__toastHandled = true;
+                        this.handleTriggerHeader(header);
+                    });
+                },
+                seedToasts() {
+                    const seeded = [{% for message in messages %}{
+                        message: "{{ message|escapejs }}",
+                        type: "{{ message.tags|default:'info' }}",
+                    }{% if not forloop.last %},{% endif %}{% endfor %}];
+                    seeded.forEach((toast) => {
+                        if (toast.message) {
+                            this.addToast(toast.message, toast.type);
+                        }
+                    });
+                },
+                handleTriggerHeader(header) {
+                    const triggers = this.parseTriggerHeader(header);
+                    const payload = triggers.showToast;
+                    if (!payload) return;
+                    const list = Array.isArray(payload) ? payload : [payload];
+                    list.forEach((item) => {
+                        if (item && item.message) {
+                            this.addToast(item.message, item.type || "info");
+                        }
+                    });
+                },
+                parseTriggerHeader(header) {
+                    if (!header) return {};
+                    const trimmed = header.trim();
+                    const jsonStart = trimmed.indexOf("{");
+                    if (jsonStart !== -1) {
+                        const jsonString = trimmed.slice(jsonStart);
+                        try {
+                            return JSON.parse(jsonString);
+                        } catch (error) {
+                            return {};
+                        }
+                    }
+                    const triggers = {};
+                    trimmed.split(",").forEach((part) => {
+                        const key = part.trim();
+                        if (key) {
+                            triggers[key] = true;
+                        }
+                    });
+                    return triggers;
+                },
+                addToast(message, type) {
+                    const normalized = this.normalizeType(type);
+                    const key = `${normalized}:${message}`;
+                    const now = Date.now();
+                    const lastSeen = this.recentToasts[key];
+                    if (lastSeen && now - lastSeen < 4000) {
+                        return;
+                    }
+                    this.recentToasts[key] = now;
+                    const toast = {
+                        id: this.nextId++,
+                        message,
+                        type: normalized,
+                        visible: true,
+                    };
+                    this.toasts.push(toast);
+                    setTimeout(() => this.dismissToast(toast.id), 3000);
+                },
+                dismissToast(id) {
+                    const toast = this.toasts.find((item) => item.id === id);
+                    if (!toast) return;
+                    toast.visible = false;
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter((item) => item.id !== id);
+                    }, 250);
+                },
+                normalizeType(type) {
+                    const normalized = (type || "").toString().toLowerCase();
+                    if (normalized.includes("error")) return "error";
+                    if (normalized.includes("warning")) return "warning";
+                    if (normalized.includes("success")) return "success";
+                    if (normalized.includes("info")) return "info";
+                    return "info";
+                },
+                toastClasses(type) {
+                    const map = {
+                        success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+                        error: "border-red-200 bg-red-50 text-red-900",
+                        warning: "border-amber-200 bg-amber-50 text-amber-900",
+                        info: "border-blue-200 bg-blue-50 text-blue-900",
+                    };
+                    return map[type] || map.info;
+                },
+                iconClasses(type) {
+                    const map = {
+                        success: "text-emerald-500",
+                        error: "text-red-500",
+                        warning: "text-amber-500",
+                        info: "text-blue-500",
+                    };
+                    return map[type] || map.info;
+                },
+            };
+        }
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>
