@@ -111,7 +111,7 @@
     <div
         x-data="toastManager()"
         x-init="init()"
-        class="fixed z-50 inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center space-y-2 px-4 sm:inset-auto sm:top-4 sm:right-4 sm:translate-y-0 sm:items-end"
+        class="fixed z-50 top-4 left-0 right-0 flex flex-col items-center space-y-2 px-4 pointer-events-none"
         aria-live="polite"
         aria-atomic="true"
     >
@@ -290,10 +290,10 @@
                 },
                 toastClasses(type) {
                     const map = {
-                        success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-                        error: "border-red-200 bg-red-50 text-red-900",
-                        warning: "border-amber-200 bg-amber-50 text-amber-900",
-                        info: "border-blue-200 bg-blue-50 text-blue-900",
+                        success: "border-emerald-300 bg-white text-emerald-900",
+                        error: "border-red-300 bg-white text-red-900",
+                        warning: "border-amber-300 bg-white text-amber-900",
+                        info: "border-blue-300 bg-white text-blue-900",
                     };
                     return map[type] || map.info;
                 },
