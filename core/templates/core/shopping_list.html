@@ -127,33 +127,44 @@
 
     {% if shopping_list %}
     <!-- Add Item Form -->
-    <div class="bg-white rounded-lg shadow-sm p-3 sm:p-4" id="add-item-form">
+    <div class="bg-white rounded-lg shadow-sm p-3 sm:p-4 border-2 border-emerald-500 sm:border-none" id="add-item-form">
         <form id="shopping-add-form"
               hx-post="{% url 'shopping_add' shopping_list.pk %}"
               hx-target="#shopping-items-list"
               hx-swap="innerHTML"
-              class="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-3 sm:items-end">
+              class="flex flex-col gap-3 sm:flex-row sm:items-end">
             {% csrf_token %}
-            <!-- Item name - full width on mobile -->
-            <div class="w-full sm:flex-1 sm:min-w-[200px] relative">
-                <label for="item-name" class="block text-xs font-medium text-gray-500 mb-1">Item</label>
-                <input type="text"
-                       name="name"
-                       id="item-name"
-                       autocomplete="off"
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
-                       placeholder="Item name"
-                       required>
-                <input type="hidden" name="ingredient_id" id="ingredient-id" value="">
-                <div id="item-autocomplete" class="absolute z-10 w-full mt-1"></div>
+            <!-- Primary Row: Item + Add Button (on mobile) -->
+            <div class="flex gap-2 sm:flex-1 sm:min-w-[200px]">
+                <div class="flex-1 relative">
+                    <label for="item-name" class="block text-xs font-medium text-gray-500 mb-1">Item</label>
+                    <input type="text"
+                           name="name"
+                           id="item-name"
+                           autocomplete="off"
+                           class="block w-full rounded-md border-emerald-300 sm:border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-lg sm:text-sm px-3 py-3 sm:py-2"
+                           placeholder="Item name"
+                           required>
+                    <input type="hidden" name="ingredient_id" id="ingredient-id" value="">
+                    <div id="item-autocomplete" class="absolute z-10 w-full mt-1"></div>
+                </div>
+                
+                <!-- Mobile only Add button -->
+                <div class="flex items-end sm:hidden">
+                    <button type="submit"
+                            class="px-6 py-3 border border-transparent text-base font-bold rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 h-[52px]">
+                        Add
+                    </button>
+                </div>
             </div>
-            <!-- Category and Quantity row on mobile -->
+
+            <!-- Secondary Row: Category and Quantity -->
             <div class="flex gap-2 sm:gap-3">
                 <div class="flex-1 sm:w-40 sm:flex-none">
                     <label for="item-category" class="block text-xs font-medium text-gray-500 mb-1">Category</label>
                     <select name="category"
                             id="item-category"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2">
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm px-3 py-2">
                         <option value="">---------</option>
                         {% for cat in categories %}
                         <option value="{{ cat.pk }}">{{ cat.name }}</option>
@@ -165,13 +176,14 @@
                     <input type="text"
                            name="quantities"
                            id="item-quantities"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm px-3 py-2"
                            placeholder="e.g., 2">
                 </div>
             </div>
-            <!-- Add button - full width on mobile -->
+
+            <!-- Desktop Add button -->
             <button type="submit"
-                    class="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800">
+                    class="hidden sm:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800">
                 Add Item
             </button>
         </form>
