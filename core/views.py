@@ -1,3 +1,4 @@
+import json
 import markdown
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
@@ -932,6 +933,8 @@ def shopping_add(request, pk):
     from .services.shopping import get_sorted_items
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    toast_message = None
+    toast_type = None
 
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
@@ -960,6 +963,9 @@ def shopping_add(request, pk):
                 quantities=quantities,
                 is_manual=True,
             )
+            
+            toast_message = f"Added '{name}' to shopping list"
+            toast_type = "success"
 
     # Return updated items list
     grouped_items = get_sorted_items(shopping_list_obj)
@@ -967,7 +973,19 @@ def shopping_add(request, pk):
         "shopping_list": shopping_list_obj,
         "grouped_items": grouped_items,
     }
-    return render(request, "components/shopping_items_only.html", context)
+    response = render(request, "components/shopping_items_only.html", context)
+    
+    # Add toast notification via HX-Trigger header
+    if toast_message:
+        trigger_data = {
+            "showToast": {
+                "message": toast_message,
+                "type": toast_type
+            }
+        }
+        response["HX-Trigger"] = json.dumps(trigger_data)
+    
+    return response
 
 
 @login_required

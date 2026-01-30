@@ -430,7 +430,7 @@ document.addEventListener('click', function(e) {
 
 // Clear form only after successful POST submission
 document.getElementById('shopping-add-form').addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.detail.successful && evt.detail.requestConfig.verb === 'post') {
+    if (evt.detail.successful) {
         clearAddForm();
     }
 });

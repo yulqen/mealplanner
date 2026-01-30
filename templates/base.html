@@ -201,7 +201,10 @@
                     this.seedToasts();
                 },
                 bindHtmx() {
-                    if (!window.htmx) return;
+                    if (!window.htmx) {
+                        console.error('HTMX not loaded');
+                        return;
+                    }
                     document.body.addEventListener("htmx:afterRequest", (event) => {
                         const xhr = event.detail.xhr;
                         const header = xhr.getResponseHeader("HX-Trigger");
@@ -242,6 +245,7 @@
                         try {
                             return JSON.parse(jsonString);
                         } catch (error) {
+                            console.error('Error parsing HX-Trigger header:', error, jsonString);
                             return {};
                         }
                     }
