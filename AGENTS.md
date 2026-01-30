@@ -1,87 +1,45 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for coding agents working on this repository.
 
-## Project Overview
+## Quick Facts
 
-A family meal planning Django web application that manages recipes, generates weekly meal plans, and produces store-specific shopping lists. Target: self-hosted on Debian with nginx.
+- **Project**: Django web app for family meal planning (recipes, weekly plans, shopping lists)
+- **Target**: Self-hosted on Debian with nginx
+- **Package Manager**: `uv`
 
-## Technology Stack
-
-- **Backend**: Django 6.x with SQLite
-- **Frontend**: Django templates + HTMX + Tailwind CSS (standalone CLI, no Node.js)
-- **Real-time**: HTMX polling (5s interval) for shopping list sync
-- **Deployment**: nginx + gunicorn
-- **Package Manager**: uv
-
-## Common Commands
+## Essential Commands
 
 ```bash
-# Development server
+# Start development
 uv run manage.py runserver
 
-# Run all tests
+# Run tests
 uv run manage.py test
 
-# Run specific test file
-uv run manage.py test core.tests.test_recipes
-
-# Run single test
-uv run manage.py test core.tests.test_recipes.RecipeViewTests.test_recipe_list
-
 # Database migrations
-uv run manage.py makemigrations
-uv run manage.py migrate
+uv run manage.py makemigrations && uv run manage.py migrate
 
-# Load initial data (meal types, categories, stores)
+# Seed initial data
 uv run manage.py seed_data
-
-# Add a dependency
-uv add <package>
-
-# Sync dependencies
-uv sync
-
-# Tailwind CSS (using standalone binary via Makefile)
-make css         # Production build
-make css-watch   # Development watch mode
-
-# Collect static files for production
-uv run manage.py collectstatic
 ```
 
-## Architecture
+## Documentation
 
-### App Structure
+For detailed guidance, see:
 
-Single `core` app contains all functionality:
-- `models.py` - All models (MealType, Recipe, Ingredient, WeekPlan, ShoppingList, etc.)
-- `views/` - Split by domain: recipes.py, ingredients.py, plans.py, shopping.py, settings_views.py
-- `services/` - Business logic: shuffle.py (meal plan generation), shopping.py (list generation)
-- `templates/core/` - Full page templates
-- `templates/components/` - HTMX partials for dynamic updates
+- **[Quick Start & Common Commands](docs/QUICK_START.md)** — Full list of development tasks
+- **[Architecture & Data Models](docs/ARCHITECTURE.md)** — App structure, models, business logic
+- **[Frontend & HTMX Patterns](docs/FRONTEND.md)** — Template organization, dynamic updates
+- **[Implementation Spec](mealplanner-spec.md)** — Complete requirements and tech stack
 
-### Key Data Models
+## Key Principles
 
-- **Recipe** → has many RecipeIngredients → references Ingredients
-- **Ingredient** → belongs to ShoppingCategory, can be pantry staple (excluded from lists)
-- **WeekPlan** → has 7 PlannedMeals (day_offset 0-6)
-- **ShoppingList** → has items, references Store for category ordering
-- **Store** → has StoreCategoryOrders defining aisle sequence per category
+1. **Single `core` app** with views split by domain (recipes, ingredients, plans, shopping)
+2. **HTMX for interactivity** — no JavaScript build step
+3. **Tailwind CSS via standalone CLI** — see `make css` and `make css-watch`
+4. **Database-driven**: SQLite with Django ORM
 
-### Business Logic
+## Before You Start
 
-**Shuffle Algorithm** (`services/shuffle.py`): Assigns random recipes ensuring no consecutive days have the same MealType.
-
-**Shopping List Generation** (`services/shopping.py`): Aggregates ingredients from week plan recipes, excludes pantry staples, orders by store-specific category sequence.
-
-### HTMX Patterns
-
-- Recipe list filters update without full reload
-- Week plan shuffle/assign use HTMX swaps
-- Shopping list checkbox toggles use HTMX with polling for multi-device sync
-- Ingredient autocomplete with inline creation during recipe editing
-
-## Implementation Phases
-
-The spec defines 5 phases: Foundation (recipes + auth) → Ingredients → Meal Planning → Shopping Lists → Polish. Reference `mealplanner-spec.md` for detailed requirements.
+Reference `mealplanner-spec.md` for full requirements. If you're adding features, check the implementation phases to understand current scope.
