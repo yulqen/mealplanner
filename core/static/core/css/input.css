@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* HTMX indicator - hide by default, show when request is in progress */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: inline-block;
+}
+
 /* Manual prose styles to replace @tailwindcss/typography since it's hard to use with standalone CLI */
 .prose {
     line-height: 1.5;

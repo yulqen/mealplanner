@@ -75,3 +75,34 @@ class ShoppingClearRefinementTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertTrue(ShoppingListItem.objects.filter(pk=self.unchecked_item.pk).exists())
+
+    def test_clear_htmx_returns_toast_notification(self):
+        """Verify that HTMX requests return HX-Trigger header with toast notification."""
+        import json
+        
+        # Test with checked items
+        response = self.client.post(
+            reverse("shopping_clear", args=[self.shopping_list.pk]),
+            HTTP_HX_REQUEST="true"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("HX-Trigger", response)
+        
+        trigger_data = json.loads(response["HX-Trigger"])
+        self.assertIn("showToast", trigger_data)
+        self.assertIn("message", trigger_data["showToast"])
+        self.assertIn("type", trigger_data["showToast"])
+        self.assertEqual(trigger_data["showToast"]["type"], "success")
+        self.assertIn("cleared", trigger_data["showToast"]["message"].lower())
+        
+        # Test with no checked items
+        self.checked_item.delete()
+        response = self.client.post(
+            reverse("shopping_clear", args=[self.shopping_list.pk]),
+            HTTP_HX_REQUEST="true"
+        )
+        self.assertEqual(response.status_code, 200)
+        
+        trigger_data = json.loads(response["HX-Trigger"])
+        self.assertEqual(trigger_data["showToast"]["type"], "info")
+        self.assertIn("no checked items", trigger_data["showToast"]["message"].lower())

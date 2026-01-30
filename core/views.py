@@ -999,17 +999,23 @@ def shopping_item_autocomplete(request, pk):
 @login_required
 def shopping_clear(request, pk):
     """Clear checked items from a shopping list."""
+    import json
     from .services.shopping import get_sorted_items
 
     shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    
+    toast_message = None
+    toast_type = None
 
     if request.method == "POST":
         # Clear only checked items - 'all' is no longer supported
         count = shopping_list_obj.items.filter(is_checked=True).delete()[0]
         if count > 0:
-            messages.success(request, f"{count} checked item(s) cleared.")
+            toast_message = f"{count} checked item(s) cleared."
+            toast_type = "success"
         else:
-            messages.info(request, "No checked items to clear.")
+            toast_message = "No checked items to clear."
+            toast_type = "info"
 
     # For HTMX requests, return the items partial
     if request.headers.get("HX-Request"):
@@ -1018,8 +1024,27 @@ def shopping_clear(request, pk):
             "shopping_list": shopping_list_obj,
             "grouped_items": grouped_items,
         }
-        return render(request, "components/shopping_items_only.html", context)
+        response = render(request, "components/shopping_items_only.html", context)
+        
+        # Add toast notification via HX-Trigger header for HTMX requests
+        if toast_message:
+            trigger_data = {
+                "showToast": {
+                    "message": toast_message,
+                    "type": toast_type
+                }
+            }
+            response["HX-Trigger"] = json.dumps(trigger_data)
+        
+        return response
 
+    # For non-HTMX requests, add messages to framework
+    if toast_message:
+        if toast_type == "success":
+            messages.success(request, toast_message)
+        else:
+            messages.info(request, toast_message)
+    
     return redirect("shopping_list", pk=pk)
 
 
