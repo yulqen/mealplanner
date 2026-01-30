@@ -403,54 +403,69 @@ function selectIngredient(id, name, categoryId) {
 let autocompleteTimeout = null;
 const itemNameInput = document.getElementById('item-name');
 
-itemNameInput.addEventListener('input', function() {
-    clearTimeout(autocompleteTimeout);
-    const query = this.value.trim();
+if (itemNameInput) {
+    itemNameInput.addEventListener('input', function() {
+        clearTimeout(autocompleteTimeout);
+        const query = this.value.trim();
 
-    if (query.length < 2) {
-        document.getElementById('item-autocomplete').innerHTML = '';
-        return;
-    }
+        if (query.length < 2) {
+            document.getElementById('item-autocomplete').innerHTML = '';
+            return;
+        }
 
-    autocompleteTimeout = setTimeout(() => {
-        fetch(`{% url 'shopping_item_autocomplete' shopping_list.pk %}?name=${encodeURIComponent(query)}`)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('item-autocomplete').innerHTML = html;
-            });
-    }, 300);
-});
+        autocompleteTimeout = setTimeout(() => {
+            fetch(`{% url 'shopping_item_autocomplete' shopping_list.pk %}?name=${encodeURIComponent(query)}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('item-autocomplete').innerHTML = html;
+                })
+                .catch(err => console.error('Autocomplete error:', err));
+        }, 300);
+    });
+}
 
 // Close autocomplete when clicking outside
 document.addEventListener('click', function(e) {
     if (!e.target.closest('#add-item-form')) {
-        document.getElementById('item-autocomplete').innerHTML = '';
+        const autocomplete = document.getElementById('item-autocomplete');
+        if (autocomplete) {
+            autocomplete.innerHTML = '';
+        }
     }
 });
 
 // Clear form only after successful POST submission
-document.getElementById('shopping-add-form').addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.detail.successful) {
-        clearAddForm();
-    }
-});
+const addFormElement = document.getElementById('shopping-add-form');
+if (addFormElement) {
+    addFormElement.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.successful) {
+            clearAddForm();
+        }
+    });
+}
 
 // Duplicate warning handling
 let pendingFormData = null;
 
 function showDuplicateWarning(itemName) {
-    document.getElementById('duplicate-message').textContent =
-        `"${itemName}" is already in your shopping list. Do you want to add it again?`;
-    document.getElementById('duplicate-warning').classList.remove('hidden');
+    const messageEl = document.getElementById('duplicate-message');
+    const warningEl = document.getElementById('duplicate-warning');
+    if (messageEl && warningEl) {
+        messageEl.textContent = `"${itemName}" is already in your shopping list. Do you want to add it again?`;
+        warningEl.classList.remove('hidden');
+    }
 }
 
 function closeDuplicateWarning() {
-    document.getElementById('duplicate-warning').classList.add('hidden');
+    const warningEl = document.getElementById('duplicate-warning');
+    if (warningEl) {
+        warningEl.classList.add('hidden');
+    }
     pendingFormData = null;
 }
 
 function addDuplicateAnyway() {
-    if (pendingFormData) {
+    if (pendingFormData && window.htmx) {
         pendingFormData.append('force_add', 'true');
         htmx.ajax('POST', '{% url "shopping_add" shopping_list.pk %}', {
             target: '#shopping-items-list',
@@ -459,6 +474,20 @@ function addDuplicateAnyway() {
         }).then(() => {
             clearAddForm();
         });
+    } else if (pendingFormData) {
+        // Fallback: submit the form directly with force_add hidden field
+        const form = document.getElementById('shopping-add-form');
+        if (form) {
+            const forceInput = document.createElement('input');
+            forceInput.type = 'hidden';
+            forceInput.name = 'force_add';
+            forceInput.value = 'true';
+            form.appendChild(forceInput);
+            
+            // Trigger HTMX form submission
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            form.removeChild(forceInput);
+        }
     }
     closeDuplicateWarning();
 }
