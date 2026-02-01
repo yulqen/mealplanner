@@ -552,7 +552,8 @@ def plan_clear_day(request, pk, day):
     plan = get_object_or_404(WeekPlan, pk=pk)
 
     if request.method == "POST":
-        PlannedMeal.objects.filter(week_plan=plan, day_offset=day).delete()
+        deleted_count = PlannedMeal.objects.filter(week_plan=plan, day_offset=day).delete()[0]
+        print(f"DEBUG: Deleted {deleted_count} meal(s) for plan={plan.pk}, day={day}")
 
     # Return the updated day slot partial
     from datetime import timedelta
@@ -570,6 +571,7 @@ def plan_clear_day(request, pk, day):
         },
         "recipes": Recipe.objects.filter(is_archived=False).select_related("meal_type"),
     }
+    print(f"DEBUG: Returning context with offset={day}, planned_meal=None")
     return render(request, "components/plan_day_slot.html", context)
 
 
