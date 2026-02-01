@@ -453,7 +453,8 @@ document.addEventListener('click', function(e) {
 const addFormElement = document.getElementById('shopping-add-form');
 if (addFormElement) {
     addFormElement.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.successful) {
+        // Check if this was a successful POST request (not duplicate warning)
+        if (evt.detail.successful && !evt.detail.xhr.getResponseHeader('HX-Retarget')) {
             clearAddForm();
         }
     });
