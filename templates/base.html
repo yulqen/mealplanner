@@ -15,11 +15,41 @@
         });
     </script>
     <link href="{% static 'core/css/styles.css' %}" rel="stylesheet">
+
+    <style>
+        /* Hide Alpine.js elements until loaded */
+        [x-cloak] { display: none !important; }
+
+        /* HTMX indicator styles (defined in <head> to avoid initial flash) */
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+            display: none;
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+            display: inline-flex;
+        }
+        /* Global loading modal should be a full-screen flex overlay when active */
+        #global-loading-modal.htmx-request {
+            display: flex;
+        }
+    </style>
+
     <script defer src="{% static 'core/js/alpine.min.js' %}"></script>
     <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen pb-16 sm:pb-0" x-data="{ mobileMenuOpen: false }">
+    <!-- Global HTMX Loading Modal -->
+    <div class="fixed inset-0 z-50 htmx-indicator flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm" id="global-loading-modal">
+        <div class="bg-white rounded-lg shadow-xl px-6 py-4 flex items-center gap-3">
+            {% include "components/spinner.html" with size="6" class="text-indigo-600" %}
+            <span class="text-sm font-medium text-gray-700">Loading...</span>
+        </div>
+    </div>
+
     <!-- Top Navigation -->
     <nav class="bg-white shadow-sm sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,10 +222,6 @@
     </nav>
     {% endif %}
 
-    <!-- Hide Alpine.js elements until loaded -->
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 
     <script>
         function toastManager() {

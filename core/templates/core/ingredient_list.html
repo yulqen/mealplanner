@@ -17,6 +17,7 @@
     <div class="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
         <form hx-get="{% url 'ingredient_list' %}"
               hx-target="#ingredient-list"
+              hx-indicator="#global-loading-modal"
               hx-trigger="change, input delay:300ms from:#search-input"
               hx-push-url="true"
               class="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-4 sm:items-end">
