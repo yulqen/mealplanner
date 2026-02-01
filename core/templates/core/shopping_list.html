@@ -62,7 +62,7 @@
                 {% csrf_token %}
                 <select name="store"
                         onchange="this.form.requestSubmit()"
-                        class="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2">
+                        class="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2 bg-white">
                     {% for store in stores %}
                     <option value="{{ store.pk }}" {% if shopping_list.store_id == store.pk %}selected{% endif %}>
                         {{ store.name }}
@@ -71,10 +71,10 @@
                 </select>
             </form>
 
-            <!-- Delete list button -->
+            <!-- Delete list button (hidden on mobile - shown at bottom) -->
             <button type="button"
                     onclick="openDeleteModal()"
-                    class="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
+                    class="hidden sm:inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
                 Delete List
             </button>
 
@@ -97,16 +97,16 @@
         {% endif %}
     </div>
 
-    <!-- Shopping List Selector -->
+    <!-- Shopping List Selector (Desktop only - hidden on mobile) -->
     {% if all_lists %}
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+    <div class="hidden sm:flex sm:flex-row sm:justify-between sm:items-center gap-3">
         <form hx-get="{% url 'shopping_list_current' %}"
               hx-target="body"
               hx-swap="outerHTML"
               class="flex-1 sm:flex-none">
             <select name="list"
                     onchange="this.form.requestSubmit()"
-                    class="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2">
+                    class="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2 bg-white">
                 {% for lst in all_lists %}
                 <option value="{{ lst.pk }}" {% if shopping_list and lst.pk == shopping_list.pk %}selected{% endif %}>
                     {{ lst.name }}
@@ -167,7 +167,7 @@
                     <label for="item-category" class="block text-xs font-medium text-gray-500 mb-1">Category</label>
                     <select name="category"
                             id="item-category"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2">
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm px-3 py-2 bg-white">
                         <option value="">---------</option>
                         {% for cat in categories %}
                         <option value="{{ cat.pk }}">{{ cat.name }}</option>
@@ -223,6 +223,41 @@
 
     <!-- Move Item Modal Container -->
     <div id="move-item-modal-container"></div>
+
+    <!-- Shopping List Selector (Mobile only - at bottom) -->
+    {% if all_lists %}
+    <div class="flex sm:hidden flex-col gap-3 mt-6 pt-6 border-t border-blue-200">
+        <form hx-get="{% url 'shopping_list_current' %}"
+              hx-target="body"
+              hx-swap="outerHTML"
+              class="flex-1">
+            <label class="block text-xs font-medium text-gray-500 mb-1">Switch List</label>
+            <select name="list"
+                    onchange="this.form.requestSubmit()"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2 bg-white">
+                {% for lst in all_lists %}
+                <option value="{{ lst.pk }}" {% if shopping_list and lst.pk == shopping_list.pk %}selected{% endif %}>
+                    {{ lst.name }}
+                    {% if lst.week_plan %}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        <button type="button"
+                onclick="openCreateModal()"
+                class="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create New List
+        </button>
+        <button type="button"
+                onclick="openDeleteModal()"
+                class="w-full inline-flex items-center justify-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
+            Delete List
+        </button>
+    </div>
+    {% endif %}
     {% else %}
     <!-- Empty State -->
     <div class="text-center py-8 sm:py-12 bg-white rounded-lg shadow-sm px-4">
