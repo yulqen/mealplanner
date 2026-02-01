@@ -43,7 +43,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen pb-16 sm:pb-0" x-data="{ mobileMenuOpen: false }">
     <!-- Global HTMX Loading Modal -->
-    <div class="fixed inset-0 z-50 htmx-indicator flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm" id="global-loading-modal">
+    <div class="fixed inset-0 z-50 htmx-indicator flex items-center justify-center pointer-events-none" id="global-loading-modal">
         <div class="bg-white rounded-lg shadow-xl px-6 py-4 flex items-center gap-3">
             {% include "components/spinner.html" with size="6" class="text-indigo-600" %}
             <span class="text-sm font-medium text-gray-700">Loading...</span>
