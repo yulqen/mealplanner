@@ -47,7 +47,7 @@
         <div class="w-full sm:w-auto">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Shopping List</h1>
             {% if shopping_list %}
-            <p class="text-sm text-gray-500">{{ shopping_list.name }}</p>
+            <p class="font-bold text-red-600">{{ shopping_list.name }}</p>
             {% endif %}
         </div>
         {% if shopping_list %}
@@ -187,7 +187,7 @@
             <!-- Desktop Add button -->
             <button type="submit"
                     class="hidden sm:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800">
-                Add Item
+                Add
             </button>
         </form>
     </div>
