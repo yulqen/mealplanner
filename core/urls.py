@@ -107,4 +107,9 @@ urlpatterns = [
         views.shopping_dismiss_notification,
         name="shopping_dismiss_notification",
     ),
+    path(
+        "shopping/<int:pk>/print/",
+        views.shopping_list_print,
+        name="shopping_list_print",
+    ),
 ]

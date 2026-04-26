@@ -1,0 +1,40 @@
+{% extends "core/print_base.html" %}
+
+{% block title %}Print Shopping List - {{ shopping_list.name }}{% endblock %}
+
+{% block content %}
+<div class="print-container">
+    <!-- Header with date and list name -->
+    <div class="print-header mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{{ shopping_list.name }}</h1>
+        {% if shopping_list.week_plan %}
+        <p class="text-lg text-gray-600">Week of {{ shopping_list.week_plan.start_date|date:"D d M Y" }}</p>
+        {% endif %}
+        <p class="text-sm text-gray-500 mt-2">Generated: {{ shopping_list.created_at|date:"D d M Y H:i" }}</p>
+    </div>
+
+    <!-- Main shopping list - simple columns layout -->
+    <div class="print-list">
+        {% for category_name, category_data in grouped_items %}
+        <div class="print-category mb-4">
+            <h2 class="print-category-title text-lg font-semibold text-gray-900 mb-2">{{ category_name }}</h2>
+            <ul class="print-items-list space-y-1">
+                {% for item in category_data.items %}
+                <li class="print-item {% if item.is_checked %}line-through text-gray-400{% endif %}">
+                    <span class="print-item-name">{{ item.name }}</span>
+                    {% if item.quantities %}
+                    <span class="print-item-qty">({{ item.quantities }})</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Footer with summary -->
+    <div class="print-footer mt-8 pt-4 border-t border-gray-200">
+        <p class="text-sm text-gray-500">Total items: {{ shopping_list.items.count }}</p>
+    </div>
+</div>
+{% endblock %}

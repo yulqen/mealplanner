@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meal Planner{% endblock %}</title>
+    <link href="{% static 'core/css/styles.css' %}" rel="stylesheet">
+    <style>
+        /* Print-specific styles */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+                background: white;
+                color: black;
+            }
+            
+            .print-container {
+                padding: 20mm;
+            }
+            
+            /* Hide navigation and other non-essential elements */
+            nav, .fixed, [x-data], #toast-manager {
+                display: none !important;
+            }
+            
+            /* Ensure proper page breaks */
+            .print-category {
+                page-break-inside: avoid;
+            }
+            
+            /* Simple list styling for printing */
+            .print-items-list {
+                list-style-type: none;
+                padding-left: 0;
+            }
+            
+            .print-item {
+                font-size: 14px;
+                line-height: 1.4;
+                padding: 2px 0;
+            }
+            
+            .print-item-name {
+                font-weight: 500;
+            }
+            
+            .print-item-qty {
+                font-weight: normal;
+                color: #666;
+            }
+            
+            .print-category-title {
+                font-size: 16px;
+                margin-bottom: 4px;
+                border-bottom: 1px solid #e5e7eb;
+                padding-bottom: 2px;
+            }
+            
+            .print-header {
+                margin-bottom: 12px;
+            }
+            
+            .print-header h1 {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+            
+            .print-header p {
+                font-size: 14px;
+                margin: 1px 0;
+            }
+        }
+        
+        /* Screen styles (hidden when printing) */
+        @media screen {
+            .print-only {
+                display: none;
+            }
+        }
+        
+        /* Base Tailwind classes for consistency */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+        }
+        
+        h1, h2, h3 {
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+    <!-- Print-only elements that should show on screen -->
+    <div class="print-only fixed top-4 right-4 z-50">
+        <button onclick="window.print()"
+                class="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 transition-colors">
+            Print
+        </button>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="print-container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script>
+        // Auto-print when page loads (user can cancel if needed)
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

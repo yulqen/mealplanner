@@ -1241,3 +1241,21 @@ def shopping_dismiss_notification(request, pk):
     """
     # Just return empty response - HTMX will remove the element
     return HttpResponse("", status=200)
+
+
+@login_required
+def shopping_list_print(request, pk):
+    """View for printing a clean shopping list - no boxes, just simple lists."""
+    from .models import ShoppingList, ShoppingCategory
+    from .services.shopping import get_sorted_items
+
+    shopping_list_obj = get_object_or_404(ShoppingList, pk=pk)
+    grouped_items = get_sorted_items(shopping_list_obj)
+
+    context = {
+        "shopping_list": shopping_list_obj,
+        "grouped_items": grouped_items,
+    }
+
+    # Return minimal template optimized for printing
+    return render(request, "core/shopping_list_print.html", context)
