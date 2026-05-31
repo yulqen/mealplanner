@@ -4,12 +4,14 @@
 
 **All phases have been successfully implemented and tested.**
 
-- **40 API tests** created and passing
-- **163 total tests** passing (including existing tests)
+- **51 API tests** created and passing (15 authentication + 11 serializer + 25 view tests)
+- **174 total tests** passing (including existing tests)
 - **Full CRUD API** for all models
 - **Custom actions** implemented (shuffle, generate, toggle_check, toggle_pin)
 - **Swagger/OpenAPI documentation** available at `/api/v1/schema/swagger-ui/`
-- **Session authentication** configured and tested
+- **Dual authentication** configured and tested:
+  - Session authentication (for web browsers)
+  - Token-based JWT authentication (for API clients)
 
 See [API_IMPLEMENTATION_STATUS.md](API_IMPLEMENTATION_STATUS.md) for detailed status.
 

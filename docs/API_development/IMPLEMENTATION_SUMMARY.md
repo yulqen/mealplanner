@@ -9,13 +9,15 @@ The **Meal Planner API** has been successfully implemented using **Django REST F
 ### 1. API Infrastructure
 - **Framework**: Django REST Framework 3.17.1+
 - **Documentation**: drf-spectacular 0.29.0+
-- **Authentication**: Session-based (Django's built-in)
+- **Authentication**: Dual authentication system
+  - Session-based (Django's built-in) for web browsers
+  - Token-based (JWT via djangorestframework-simplejwt) for API clients
 - **Pagination**: 20 items per page (configurable)
 - **Format**: JSON with Browsable API support
 
 ### 2. API Endpoints (40+ endpoints)
 
-All endpoints are under `/api/v1/` and require authentication.
+All endpoints are under `/api/v1/` and require authentication (session or token).
 
 #### Core Resources (Full CRUD)
 - `/api/v1/meal-types/` - Meal types (Dinner, Lunch, etc.)
@@ -53,10 +55,11 @@ All endpoints are under `/api/v1/` and require authentication.
 - Interactive API documentation with try-it-out functionality
 
 ### 4. Testing
-- **40 API-specific tests** created
-- **163 total tests** passing (including existing tests)
+- **51 API-specific tests** created
+- **174 total tests** passing (including existing tests)
 - Coverage includes:
-  - Authentication (session-based)
+  - Authentication (session-based and token-based JWT)
+  - Dual authentication (both methods work simultaneously)
   - CRUD operations for all models
   - Custom actions (shuffle, generate, toggle)
   - Filtering and pagination
@@ -74,7 +77,7 @@ core/api/serializers.py         # All model serializers
 core/api/urls.py                 # API URL routing
 core/api/views.py                # All viewsets and custom actions
 core/api/tests/__init__.py
-core/api/tests/test_auth.py      # Authentication tests (4 tests)
+core/api/tests/test_auth.py      # Authentication tests (15 tests)
 core/api/tests/test_serializers.py # Serializer tests (11 tests)
 core/api/tests/test_views.py     # View tests (25 tests)
 API_IMPLEMENTATION_STATUS.md    # Detailed status document
@@ -83,18 +86,30 @@ PLAN.md                         # Original plan (updated with completion status)
 
 ### Modified Files
 ```
-mealplanner/settings.py          # Added DRF and drf-spectacular config
-mealplanner/urls.py             # Added API URL routing
-pyproject.toml                  # Added dependencies
+mealplanner/settings.py          # Added DRF, drf-spectacular, and SimpleJWT config
+mealplanner/urls.py             # Added API URL routing and JWT token endpoints
+pyproject.toml                  # Added dependencies (djangorestframework-simplejwt)
 ```
 
 ## Key Features
 
 ### Authentication
-- Uses Django's **session authentication**
-- Users must POST to `/accounts/login/` first to establish a session
-- All API endpoints require the `sessionid` cookie
-- No token-based authentication needed
+The API supports **both session-based and token-based (JWT) authentication**:
+
+**Session Authentication** (for web browsers/HTMX):
+- Uses Django's built-in session authentication
+- Users POST to `/accounts/login/` to establish a session
+- API endpoints use the `sessionid` cookie
+
+**Token Authentication** (for mobile apps, CLI, third-party services):
+- Uses JWT via djangorestframework-simplejwt
+- Users POST to `/api/v1/token/` to get access and refresh tokens
+- API endpoints use `Authorization: Bearer <token>` header
+- Access tokens expire after 5 minutes
+- Refresh tokens expire after 1 day
+- Token rotation and blacklisting enabled for security
+
+Both authentication methods work simultaneously, allowing maximum flexibility for different client types.
 
 ### Filtering
 - Recipes can be filtered by:
@@ -122,21 +137,21 @@ pyproject.toml                  # Added dependencies
 ## Usage Examples
 
 ### Authentication
+
+The API supports **both session-based and token-based authentication**:
+
+#### Session Authentication (Web Browsers)
 ```bash
 # Login to get session cookie
 curl -X POST http://localhost:8000/accounts/login/ \
   -d "username=youruser&password=yourpass" \
   --cookie-jar cookies.txt
-```
 
-### List All Recipes
-```bash
+# List all recipes using session cookie
 curl http://localhost:8000/api/v1/recipes/ \
   --cookie cookies.txt
-```
 
-### Create a Recipe
-```bash
+# Create a recipe using session cookie
 curl -X POST http://localhost:8000/api/v1/recipes/ \
   --cookie cookies.txt \
   -H "Content-Type: application/json" \
@@ -150,6 +165,44 @@ curl -X POST http://localhost:8000/api/v1/recipes/ \
       {"ingredient": 2, "quantity": "4"}
     ]
   }'
+```
+
+#### Token Authentication (Mobile Apps, CLI, Third-Party Services)
+```bash
+# Get JWT tokens
+curl -X POST http://localhost:8000/api/v1/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"youruser","password":"yourpass"}'
+
+# Response:
+# {
+#   "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+# }
+
+# List all recipes using access token
+curl http://localhost:8000/api/v1/recipes/ \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+# Create a recipe using access token
+curl -X POST http://localhost:8000/api/v1/recipes/ \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Spaghetti Carbonara",
+    "meal_type": 1,
+    "difficulty": 2,
+    "instructions": "Cook pasta. Mix with eggs, cheese, and bacon.",
+    "recipe_ingredients": [
+      {"ingredient": 1, "quantity": "400g"},
+      {"ingredient": 2, "quantity": "4"}
+    ]
+  }'
+
+# Refresh access token when expired
+curl -X POST http://localhost:8000/api/v1/token/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{"refresh":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}'
 ```
 
 ### Shuffle a Week Plan
@@ -175,11 +228,15 @@ curl -X POST http://localhost:8000/api/v1/shopping-list-items/5/toggle_check/ \
 Run all API tests:
 ```bash
 uv run python manage.py test core.api.tests
+# Ran 51 tests in 18.033s
+# OK
 ```
 
 Run full test suite:
 ```bash
 uv run python manage.py test
+# Ran 174 tests in 42.069s
+# OK
 ```
 
 ## Issues Resolved
