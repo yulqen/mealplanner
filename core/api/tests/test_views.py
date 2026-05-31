@@ -2,19 +2,22 @@
 Tests for API views.
 """
 
-from django.test import TestCase, Client
+from datetime import date
+
 from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
 from rest_framework import status
+
 from core.models import (
-    MealType,
-    ShoppingCategory,
-    Store,
     Ingredient,
-    Recipe,
-    WeekPlan,
+    MealType,
     PlannedMeal,
+    Recipe,
+    ShoppingCategory,
     ShoppingList,
     ShoppingListItem,
+    Store,
+    WeekPlan,
 )
 
 User = get_user_model()
@@ -53,7 +56,12 @@ class MealTypeViewSetTests(APITestCase):
     def test_update(self):
         meal_type = MealType.objects.create(name="Dinner", colour="#FF0000")
         data = {"name": "Supper", "colour": "#0000FF"}
-        response = self.client.put(f"/api/v1/meal-types/{meal_type.id}/", data, content_type="application/json", HTTP_ACCEPT="application/json")
+        response = self.client.put(
+            f"/api/v1/meal-types/{meal_type.id}/",
+            data,
+            content_type="application/json",
+            HTTP_ACCEPT="application/json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         meal_type.refresh_from_db()
         self.assertEqual(meal_type.name, "Supper")
@@ -189,6 +197,7 @@ class WeekPlanViewSetTests(APITestCase):
             instructions="Cook carrots",
         )
         from core.models import RecipeIngredient
+
         RecipeIngredient.objects.create(
             recipe=self.recipe,
             ingredient=self.ingredient,
@@ -197,24 +206,30 @@ class WeekPlanViewSetTests(APITestCase):
 
     def test_list(self):
         from datetime import date
+
         WeekPlan.objects.create(
             start_date=date(2024, 1, 1),
             is_locked=False,
+            created_by=self.user,
         )
         response = self.client.get("/api/v1/week-plans/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create(self):
         from datetime import date
+
         data = {"start_date": date(2024, 1, 1), "is_locked": False}
-        response = self.client.post("/api/v1/week-plans/", data)
+        response = self.client.post("/api/v1/week-plans/", data, HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["created_by"], self.user.id)
 
     def test_shuffle_action(self):
         from datetime import date
+
         week_plan = WeekPlan.objects.create(
             start_date=date(2024, 1, 1),
             is_locked=False,
+            created_by=self.user,
         )
         response = self.client.post(
             f"/api/v1/week-plans/{week_plan.id}/shuffle/",
@@ -230,10 +245,12 @@ class PlannedMealViewSetTests(APITestCase):
     def setUp(self):
         super().setUp()
         from datetime import date
+
         self.meal_type = MealType.objects.create(name="Dinner", colour="#FF0000")
         self.week_plan = WeekPlan.objects.create(
             start_date=date(2024, 1, 1),
             is_locked=False,
+            created_by=self.user,
         )
         self.recipe = Recipe.objects.create(
             name="Test Recipe",
@@ -257,7 +274,7 @@ class PlannedMealViewSetTests(APITestCase):
             recipe=self.recipe,
         )
         self.assertFalse(planned_meal.is_pinned)
-        
+
         response = self.client.post(
             f"/api/v1/planned-meals/{planned_meal.id}/toggle_pin/",
             HTTP_ACCEPT="application/json",
@@ -272,7 +289,7 @@ class ShoppingListViewSetTests(APITestCase):
         super().setUp()
         from datetime import date
         from core.models import RecipeIngredient
-        
+
         self.meal_type = MealType.objects.create(name="Dinner", colour="#FF0000")
         self.category = ShoppingCategory.objects.create(name="Produce")
         self.ingredient = Ingredient.objects.create(
@@ -290,10 +307,11 @@ class ShoppingListViewSetTests(APITestCase):
             ingredient=self.ingredient,
             quantity="500g",
         )
-        
+
         self.week_plan = WeekPlan.objects.create(
             start_date=date(2024, 1, 1),
             is_locked=False,
+            created_by=self.user,
         )
         # Add a planned meal with the recipe
         PlannedMeal.objects.create(
@@ -309,14 +327,16 @@ class ShoppingListViewSetTests(APITestCase):
             "week_plan": self.week_plan.id,
             "store": self.store.id,
         }
-        response = self.client.post("/api/v1/shopping-lists/", data)
+        response = self.client.post("/api/v1/shopping-lists/", data, HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["created_by"], self.user.id)
 
     def test_generate_action(self):
         shopping_list = ShoppingList.objects.create(
             name="Test List",
             week_plan=self.week_plan,
             store=self.store,
+            created_by=self.user,
         )
         response = self.client.post(
             f"/api/v1/shopping-lists/{shopping_list.id}/generate/",
@@ -333,6 +353,7 @@ class ShoppingListItemViewSetTests(APITestCase):
         super().setUp()
         self.shopping_list = ShoppingList.objects.create(
             name="Test List",
+            created_by=self.user,
         )
 
     def test_toggle_check_action(self):
@@ -343,7 +364,7 @@ class ShoppingListItemViewSetTests(APITestCase):
             is_checked=False,
         )
         self.assertFalse(item.is_checked)
-        
+
         response = self.client.post(
             f"/api/v1/shopping-list-items/{item.id}/toggle_check/",
             HTTP_ACCEPT="application/json",
@@ -351,3 +372,129 @@ class ShoppingListItemViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         item.refresh_from_db()
         self.assertTrue(item.is_checked)
+
+
+class APISecurityOwnershipTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pw123456")
+        self.other = User.objects.create_user(username="other", password="pw123456")
+
+        self.owner_client = Client()
+        self.other_client = Client()
+        self.owner_client.login(username="owner", password="pw123456")
+        self.other_client.login(username="other", password="pw123456")
+
+        self.meal_type = MealType.objects.create(name="Dinner", colour="#FF0000")
+        self.recipe = Recipe.objects.create(
+            name="Owner Recipe",
+            meal_type=self.meal_type,
+            instructions="Cook",
+        )
+        self.store = Store.objects.create(name="Owner Store", is_default=True)
+
+    def test_week_plan_create_ignores_client_created_by(self):
+        response = self.owner_client.post(
+            "/api/v1/week-plans/",
+            {"start_date": "2026-01-05", "created_by": self.other.id, "is_locked": False},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["created_by"], self.owner.id)
+
+    def test_shopping_list_create_ignores_client_created_by(self):
+        week_plan = WeekPlan.objects.create(
+            start_date=date(2026, 1, 12),
+            created_by=self.owner,
+            is_locked=False,
+        )
+        response = self.owner_client.post(
+            "/api/v1/shopping-lists/",
+            {
+                "name": "Secure List",
+                "week_plan": week_plan.id,
+                "store": self.store.id,
+                "created_by": self.other.id,
+            },
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["created_by"], self.owner.id)
+
+    def test_cannot_retrieve_or_delete_other_users_week_plan(self):
+        week_plan = WeekPlan.objects.create(
+            start_date=date(2026, 2, 2),
+            created_by=self.owner,
+            is_locked=False,
+        )
+        retrieve_response = self.other_client.get(
+            f"/api/v1/week-plans/{week_plan.id}/",
+            HTTP_ACCEPT="application/json",
+        )
+        delete_response = self.other_client.delete(
+            f"/api/v1/week-plans/{week_plan.id}/",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(retrieve_response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(delete_response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cannot_create_planned_meal_for_other_users_week_plan(self):
+        week_plan = WeekPlan.objects.create(
+            start_date=date(2026, 3, 2),
+            created_by=self.owner,
+            is_locked=False,
+        )
+        response = self.other_client.post(
+            "/api/v1/planned-meals/",
+            {"week_plan": week_plan.id, "day_offset": 0, "recipe": self.recipe.id},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_cannot_access_other_users_shopping_list_or_items(self):
+        week_plan = WeekPlan.objects.create(
+            start_date=date(2026, 4, 6),
+            created_by=self.owner,
+            is_locked=False,
+        )
+        shopping_list = ShoppingList.objects.create(
+            name="Owner List",
+            week_plan=week_plan,
+            store=self.store,
+            created_by=self.owner,
+        )
+        item = ShoppingListItem.objects.create(
+            shopping_list=shopping_list,
+            name="Milk",
+            quantities="1",
+        )
+
+        list_response = self.other_client.get(
+            f"/api/v1/shopping-lists/{shopping_list.id}/",
+            HTTP_ACCEPT="application/json",
+        )
+        item_response = self.other_client.post(
+            f"/api/v1/shopping-list-items/{item.id}/toggle_check/",
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(list_response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(item_response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cannot_create_shopping_list_for_other_users_week_plan(self):
+        owners_week_plan = WeekPlan.objects.create(
+            start_date=date(2026, 5, 4),
+            created_by=self.owner,
+            is_locked=False,
+        )
+        response = self.other_client.post(
+            "/api/v1/shopping-lists/",
+            {
+                "name": "Hijacked List",
+                "week_plan": owners_week_plan.id,
+                "store": self.store.id,
+            },
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

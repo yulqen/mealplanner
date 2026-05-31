@@ -149,7 +149,7 @@ class WeekPlanSerializer(serializers.ModelSerializer):
             "modified_at",
             "is_locked",
         ]
-        read_only_fields = ["id", "created_at", "modified_at"]
+        read_only_fields = ["id", "created_by", "created_at", "modified_at"]
 
 
 class PlannedMealSerializer(serializers.ModelSerializer):
@@ -206,6 +206,7 @@ class ShoppingListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "created_by",
             "created_at",
             "generated_at",
         ]
