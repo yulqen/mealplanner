@@ -4,11 +4,14 @@ Tests for API authentication.
 Tests both session-based and token-based (JWT) authentication methods.
 """
 
-from django.test import TestCase, Client
+import importlib
+
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.urls import clear_url_caches
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -81,6 +84,7 @@ class TokenAuthenticationTests(TestCase):
     """Tests for JWT token-based authentication."""
 
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username="tokenuser",
@@ -122,8 +126,8 @@ class TokenAuthenticationTests(TestCase):
         response = self.client.get("/api/v1/meal-types/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_refresh_token(self):
-        """Test refreshing an access token."""
+    def test_refresh_token_rotation_invalidates_old_refresh_token(self):
+        """Test refresh rotation invalidates the previously used refresh token."""
         # Get initial tokens
         token_response = self.client.post(
             "/api/v1/token/",
@@ -131,8 +135,8 @@ class TokenAuthenticationTests(TestCase):
             format="json",
         )
         refresh_token = token_response.data["refresh"]
-        
-        # Refresh access token
+
+        # First refresh should succeed and rotate token
         refresh_response = self.client.post(
             "/api/v1/token/refresh/",
             {"refresh": refresh_token},
@@ -140,6 +144,15 @@ class TokenAuthenticationTests(TestCase):
         )
         self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", refresh_response.data)
+        self.assertIn("refresh", refresh_response.data)
+
+        # Reusing the old refresh token should now fail
+        reuse_response = self.client.post(
+            "/api/v1/token/refresh/",
+            {"refresh": refresh_token},
+            format="json",
+        )
+        self.assertEqual(reuse_response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_refresh_token_invalid(self):
         """Test refreshing with invalid refresh token."""
@@ -225,10 +238,50 @@ class TokenAuthenticationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+class APIDocsExposureTests(TestCase):
+    """Tests for production-safe docs endpoint exposure controls."""
+
+    def test_schema_endpoints_disabled_when_docs_off(self):
+        with override_settings(API_DOCS_ENABLED=False):
+            clear_url_caches()
+            import mealplanner.urls
+
+            importlib.reload(mealplanner.urls)
+
+            client = Client()
+            schema_response = client.get("/api/v1/schema/")
+            swagger_response = client.get("/api/v1/schema/swagger-ui/")
+
+            self.assertEqual(schema_response.status_code, status.HTTP_404_NOT_FOUND)
+            self.assertEqual(swagger_response.status_code, status.HTTP_404_NOT_FOUND)
+
+        clear_url_caches()
+        import mealplanner.urls
+
+        importlib.reload(mealplanner.urls)
+
+
+class APIThrottleTests(TestCase):
+    """Tests for API throttling behaviour."""
+
+    def test_token_obtain_is_rate_limited(self):
+        cache.clear()
+        User.objects.create_user(username="throttleuser", password="throttlepass123")
+        client = APIClient()
+
+        payload = {"username": "throttleuser", "password": "throttlepass123"}
+
+        responses = [client.post("/api/v1/token/", payload, format="json") for _ in range(11)]
+
+        self.assertTrue(all(r.status_code == status.HTTP_200_OK for r in responses[:10]))
+        self.assertEqual(responses[10].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
 class DualAuthenticationTests(TestCase):
     """Tests to verify both session and token authentication work."""
 
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             username="dualuser",
             password="dualpass123",

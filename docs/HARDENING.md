@@ -10,6 +10,15 @@ This document tracks the security requirements for the API rollout and public in
   - `DJANGO_DEBUG=False`
   - Strong `DJANGO_SECRET_KEY`
 
+## Implementation Status
+
+- ✅ **Phase 1A complete**: ownership scoping and object access boundaries added for user-owned resources.
+- ✅ **Phase 1B complete**: `created_by` made server-controlled for API-created `WeekPlan` and `ShoppingList` records.
+- ✅ **Phase 1C complete**: JWT blacklist app enabled; refresh token rotation now invalidates reused refresh tokens.
+- ✅ **Phase 1D complete**: API schema/swagger URLs are now gated by `API_DOCS_ENABLED` and disabled by default when `DEBUG=False`.
+- ✅ **Phase 1E complete**: DRF throttling policy added with stricter scoped limits for JWT endpoints.
+- ⏳ **Phase 2 pending**: transport/cookie hardening in production settings.
+
 ## Audit Summary (May 2026)
 
 ### Critical / High
@@ -91,6 +100,20 @@ Alternative:
 
 - Configure default throttle classes and rates.
 - Add stricter rate limits for token/auth endpoints where needed.
+
+Implemented defaults:
+- `anon`: `120/min`
+- `user`: `600/min`
+- `token_obtain`: `10/min`
+- `token_refresh`: `30/min`
+- `token_verify`: `60/min`
+
+All rates are environment-overridable via:
+- `DRF_THROTTLE_ANON`
+- `DRF_THROTTLE_USER`
+- `DRF_THROTTLE_TOKEN_OBTAIN`
+- `DRF_THROTTLE_TOKEN_REFRESH`
+- `DRF_THROTTLE_TOKEN_VERIFY`
 
 **Acceptance criteria**
 - Excessive request bursts are rate-limited with predictable 429 behavior.

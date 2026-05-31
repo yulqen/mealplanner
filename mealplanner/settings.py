@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "core",
 ]
@@ -135,6 +136,12 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 LOGIN_URL = "/accounts/login/"
 
+# API docs exposure (disabled by default in production)
+API_DOCS_ENABLED = os.environ.get(
+    "DJANGO_ENABLE_API_DOCS",
+    "True" if DEBUG else "False",
+).lower() in ("true", "1", "yes")
+
 
 # Django REST Framework configuration
 REST_FRAMEWORK = {
@@ -152,6 +159,18 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
         "rest_framework.renderers.JSONRenderer",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("DRF_THROTTLE_ANON", "120/min"),
+        "user": os.environ.get("DRF_THROTTLE_USER", "600/min"),
+        "token_obtain": os.environ.get("DRF_THROTTLE_TOKEN_OBTAIN", "10/min"),
+        "token_refresh": os.environ.get("DRF_THROTTLE_TOKEN_REFRESH", "30/min"),
+        "token_verify": os.environ.get("DRF_THROTTLE_TOKEN_VERIFY", "60/min"),
+    },
 }
 
 
