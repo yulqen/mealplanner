@@ -176,6 +176,125 @@ Before go-live:
 
 ---
 
+## Post-Launch Quick Checks
+
+### First 10-minute smoke test
+
+1. **HTTP redirects to HTTPS**
+   ```bash
+   curl -I http://mealplanner.matthewlemon.com
+   ```
+   Expect: `301` to `https://...`
+
+2. **Security headers present on HTTPS**
+   ```bash
+   curl -I https://mealplanner.matthewlemon.com
+   ```
+   Confirm headers include:
+   - `Strict-Transport-Security`
+   - `X-Frame-Options`
+   - `X-Content-Type-Options`
+   - `Referrer-Policy`
+
+3. **API docs disabled in production**
+   - `/api/v1/schema/` returns `404`
+   - `/api/v1/schema/swagger-ui/` returns `404`
+
+4. **Session flow works**
+   - Login succeeds.
+   - Create/update/delete a simple object (e.g. meal type).
+
+5. **JWT flow works**
+   - Token obtain endpoint returns access/refresh.
+   - Authenticated API call with Bearer token succeeds.
+
+### First 24 hours monitoring
+
+6. **Gunicorn error log**
+   ```bash
+   sudo tail -f /var/log/mealplanner/gunicorn-error.log
+   ```
+
+7. **nginx error log**
+   ```bash
+   sudo tail -f /var/log/nginx/mealplanner-error.log
+   ```
+
+8. **Auth noise / abuse signals in access log**
+   ```bash
+   sudo grep -E ' /api/v1/token/| 401 | 403 | 429 ' /var/log/nginx/mealplanner-access.log | tail -n 100
+   ```
+
+9. **Process health**
+   ```bash
+   sudo supervisorctl status mealplanner
+   ```
+
+10. **Deployment profile check**
+   ```bash
+   sudo -u www-data /var/www/.local/bin/uv run python manage.py check --deploy
+   ```
+   Expected acceptable warning: optional HSTS preload policy if intentionally disabled.
+
+### After 1–2 stable days
+
+11. Increase HSTS max-age from `3600` to `31536000`.
+
+---
+
+## Incident Playbook (Quick Response)
+
+### A. Token endpoint abuse (bursts of `/api/v1/token/` and many 429/401)
+
+1. Lower auth endpoint limits temporarily in `.env`:
+   - `DRF_THROTTLE_TOKEN_OBTAIN=5/min`
+   - `DRF_THROTTLE_TOKEN_REFRESH=15/min`
+2. Restart app:
+   ```bash
+   sudo supervisorctl restart mealplanner
+   ```
+3. If abusive IPs are obvious, add temporary nginx deny rules and reload nginx.
+
+### B. Legit users blocked by throttling (too many 429s)
+
+1. Increase relevant throttle env values moderately:
+   - `DRF_THROTTLE_USER`
+   - `DRF_THROTTLE_TOKEN_OBTAIN`
+2. Restart app and re-test login/API flow.
+
+### C. 502/504 or upstream failures
+
+1. Check process status:
+   ```bash
+   sudo supervisorctl status mealplanner
+   ```
+2. Inspect logs:
+   ```bash
+   sudo tail -100 /var/log/mealplanner/gunicorn-error.log
+   sudo tail -100 /var/log/nginx/mealplanner-error.log
+   ```
+3. Restart app:
+   ```bash
+   sudo supervisorctl restart mealplanner
+   ```
+4. Re-check endpoint with `curl -I https://...`.
+
+### D. Suspected credential compromise
+
+1. Rotate `DJANGO_SECRET_KEY` (forces invalidation of signing dependent state).
+2. Restart app.
+3. Ask family users to log in again and rotate passwords.
+4. Review auth logs around compromise window.
+
+### E. Need emergency rollback
+
+1. Revert to previous git revision on server.
+2. `uv sync` if needed.
+3. Run migrations only if rollback path permits.
+4. Restart supervisor process and validate health checks.
+
+---
+
 ## Notes
 
 - This document intentionally separates **application-level controls** from **deployment controls**.
