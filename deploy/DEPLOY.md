@@ -81,7 +81,20 @@ Your `.env` should look like:
 DJANGO_SECRET_KEY=your-generated-secret-key
 DJANGO_DEBUG=False
 DJANGO_ALLOWED_HOSTS=mealplanner.matthewlemon.com
+DJANGO_ENABLE_API_DOCS=False
+
+# Transport/cookie hardening
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_CSRF_COOKIE_SECURE=True
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_SECURE_HSTS_SECONDS=31536000
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+DJANGO_SECURE_HSTS_PRELOAD=False
+DJANGO_X_FRAME_OPTIONS=DENY
 ```
+
+> If you want to roll out HSTS cautiously, start with `DJANGO_SECURE_HSTS_SECONDS=3600`
+> for a day, then increase to `31536000`.
 
 ## Step 6: Install Python Dependencies
 
@@ -100,6 +113,9 @@ sudo -u www-data /var/www/.local/bin/uv run python manage.py collectstatic --noi
 
 # Run database migrations
 sudo -u www-data /var/www/.local/bin/uv run python manage.py migrate
+
+# Validate deployment security profile
+sudo -u www-data /var/www/.local/bin/uv run python manage.py check --deploy
 
 # Create a superuser (optional, for admin access)
 sudo -u www-data /var/www/.local/bin/uv run python manage.py createsuperuser

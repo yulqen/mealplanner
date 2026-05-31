@@ -9,6 +9,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def env_bool(name: str, default: bool = False) -> bool:
+    """Read a boolean environment variable with sensible truthy values."""
+    return os.environ.get(name, str(default)).lower() in ("true", "1", "yes", "on")
+
+
+def env_int(name: str, default: int) -> int:
+    """Read an integer environment variable with fallback."""
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +36,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = env_bool("DJANGO_DEBUG", True)
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
 
@@ -137,10 +150,7 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 LOGIN_URL = "/accounts/login/"
 
 # API docs exposure (disabled by default in production)
-API_DOCS_ENABLED = os.environ.get(
-    "DJANGO_ENABLE_API_DOCS",
-    "True" if DEBUG else "False",
-).lower() in ("true", "1", "yes")
+API_DOCS_ENABLED = env_bool("DJANGO_ENABLE_API_DOCS", DEBUG)
 
 
 # Django REST Framework configuration
@@ -206,3 +216,20 @@ SPECTACULAR_SETTINGS = {
         "displayOperationId": True,
     },
 }
+
+
+# Production transport/cookie hardening (Phase 2)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HSTS defaults to 1 year in production profile; keep disabled in debug/dev.
+SECURE_HSTS_SECONDS = env_int("DJANGO_SECURE_HSTS_SECONDS", 0 if DEBUG else 31536000)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
+
+# Defense-in-depth headers at app layer (nginx also sets these)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = os.environ.get("DJANGO_X_FRAME_OPTIONS", "DENY")

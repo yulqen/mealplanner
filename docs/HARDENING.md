@@ -17,7 +17,7 @@ This document tracks the security requirements for the API rollout and public in
 - ✅ **Phase 1C complete**: JWT blacklist app enabled; refresh token rotation now invalidates reused refresh tokens.
 - ✅ **Phase 1D complete**: API schema/swagger URLs are now gated by `API_DOCS_ENABLED` and disabled by default when `DEBUG=False`.
 - ✅ **Phase 1E complete**: DRF throttling policy added with stricter scoped limits for JWT endpoints.
-- ⏳ **Phase 2 pending**: transport/cookie hardening in production settings.
+- ✅ **Phase 2 implemented in code/templates**: transport/cookie hardening defaults and production env/nginx guidance added (requires deployment rollout verification).
 
 ## Audit Summary (May 2026)
 
@@ -121,6 +121,15 @@ All rates are environment-overridable via:
 ---
 
 ## Phase 2 — Deployment/Transport Hardening
+
+Implemented:
+- Django settings now support secure-cookie/SSL/HSTS hardening via env vars.
+- Production env example includes these hardening variables.
+- nginx deploy template includes HSTS and additional security headers.
+- Deploy doc includes `manage.py check --deploy` verification step.
+
+Note on `SECURE_HSTS_PRELOAD`:
+- Left as explicit opt-in (`False` by default) to avoid irreversible preload commitment until you choose it deliberately.
 
 Apply in production settings (or equivalent nginx-enforced policy):
 
